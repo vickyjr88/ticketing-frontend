@@ -98,7 +98,7 @@ export default function AdminDashboard() {
           {/* Latest Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <LatestSection title="Latest Users" icon={Users} items={latest?.users} renderItem={user => (
-              <div key={user.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
+              <div key={user.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors" onClick={() => navigate(`/admin/user/${user.id}`)}>
                 <div>
                   <p className="font-medium text-sm text-gray-900">{user.name}</p>
                   <p className="text-xs text-gray-500">{user.email}</p>
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
             )} />
 
             <LatestSection title="Latest Brands" icon={Briefcase} items={latest?.brands} renderItem={brand => (
-              <div key={brand.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
+              <div key={brand.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors" onClick={() => navigate(`/brand/${brand.id}`)}>
                 <div>
                   <p className="font-medium text-sm text-gray-900">{brand.name}</p>
                   <p className="text-xs text-gray-500">{brand.industry}</p>
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
             )} />
 
             <LatestSection title="Latest Content" icon={FileText} items={latest?.content} renderItem={content => (
-              <div key={content.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
+              <div key={content.id} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors" onClick={() => navigate(`/view/${content.id}`)}>
                 <div className="flex-1 min-w-0 pr-4">
                   <p className="font-medium text-sm text-gray-900 truncate">{content.trend}</p>
                   <p className="text-xs text-gray-500 capitalize">{content.status}</p>
