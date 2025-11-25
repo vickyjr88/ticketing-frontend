@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Briefcase, TrendingUp, FileText, Shield, Search, AlertCircle, Activity, LayoutGrid, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -11,6 +12,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -166,7 +168,7 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filteredUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-gray-50/50">
+                  <tr key={user.id} className="hover:bg-gray-50/50 cursor-pointer" onClick={() => navigate(`/admin/user/${user.id}`)}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
@@ -222,7 +224,7 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filteredBrands.map(brand => (
-                  <tr key={brand.id} className="hover:bg-gray-50/50">
+                  <tr key={brand.id} className="hover:bg-gray-50/50 cursor-pointer" onClick={() => navigate(`/brand/${brand.id}`)}>
                     <td className="px-6 py-4 font-medium text-sm text-gray-900">{brand.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{brand.industry}</td>
                     <td className="px-6 py-4">
