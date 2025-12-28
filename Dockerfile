@@ -4,6 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+
+# Accept API URL as build argument
+ARG VITE_API_URL=http://localhost:4001/api
+ENV VITE_API_URL=${VITE_API_URL}
+
 RUN npm run build
 
 # Stage 2: Serve

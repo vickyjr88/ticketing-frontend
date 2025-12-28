@@ -7,6 +7,7 @@ import Signup from '../pages/auth/Signup';
 import Dashboard from '../pages/dashboard/Dashboard';
 import BrandDetails from '../pages/dashboard/BrandDetails';
 import CreateBrand from '../pages/dashboard/CreateBrand';
+import EditBrand from '../pages/dashboard/EditBrand';
 import EditContent from '../pages/dashboard/EditContent';
 import UserDetails from '../features/admin/UserDetails';
 import About from '../pages/static/About';
@@ -59,6 +60,10 @@ export default function App() {
         <Route
           path="/brands/new"
           element={isLoggedIn ? <CreateBrand /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/brand/:id/edit"
+          element={isLoggedIn ? <EditBrand /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/edit/:id"
