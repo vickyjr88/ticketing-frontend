@@ -19,10 +19,12 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import ImagePicker from '../../components/ImagePicker';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AdminEventForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const isEditing = !!id;
 
     const [loading, setLoading] = useState(isEditing);
