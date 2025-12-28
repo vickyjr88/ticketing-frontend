@@ -92,10 +92,15 @@ export default function EventDetails() {
       return;
     }
 
-    const items = Object.entries(cart).map(([tierId, quantity]) => ({
-      tierId,
-      quantity,
-    }));
+    const items = Object.entries(cart).map(([tierId, quantity]) => {
+      const tier = findTierById(tierId);
+      return {
+        tierId,
+        quantity,
+        price: Number(tier?.price || 0),
+        tierName: tier?.name || 'Unknown',
+      };
+    });
 
     navigate('/checkout', {
       state: { eventId: id, items, event },
