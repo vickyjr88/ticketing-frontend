@@ -1,0 +1,396 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { Calendar, MapPin, Clock, Users, Gift, ShoppingCart } from 'lucide-react';
+
+export default function EventDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const [event, setEvent] = useState(null);
+  const [tiers, setTiers] = useState({});
+  const [cart, setCart] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [lotteryStats, setLotteryStats] = useState(null);
+  const [lotteryEntry, setLotteryEntry] = useState(null);
+  const [enteringLottery, setEnteringLottery] = useState(false);
+
+  useEffect(() => {
+    loadEventData();
+  }, [id]);
+
+  const loadEventData = async () => {
+    try {
+      const [eventData, tiersData] = await Promise.all([
+        api.getEvent(id),
+        api.getEventTiers(id),
+      ]);
+
+      setEvent(eventData);
+      setTiers(tiersData);
+
+      if (eventData.lottery_enabled) {
+        const stats = await api.getLotteryStats(id);
+        setLotteryStats(stats);
+
+        // Check if user has already entered
+        if (isAuthenticated) {
+          try {
+            const eligibility = await api.checkLotteryEligibility(id);
+            setLotteryEntry(eligibility);
+          } catch (error) {
+            console.error('Failed to check lottery eligibility:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load event:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = (tierId, quantity = 1) => {
+    setCart((prev) => ({
+      ...prev,
+      [tierId]: (prev[tierId] || 0) + quantity,
+    }));
+  };
+
+  const removeFromCart = (tierId) => {
+    setCart((prev) => {
+      const newCart = { ...prev };
+      if (newCart[tierId] > 1) {
+        newCart[tierId]--;
+      } else {
+        delete newCart[tierId];
+      }
+      return newCart;
+    });
+  };
+
+  const calculateTotal = () => {
+    return Object.entries(cart).reduce((total, [tierId, quantity]) => {
+      const tier = findTierById(tierId);
+      return total + (tier ? tier.price * quantity : 0);
+    }, 0);
+  };
+
+  const findTierById = (tierId) => {
+    for (const category in tiers) {
+      const tier = tiers[category]?.find((t) => t.id === tierId);
+      if (tier) return tier;
+    }
+    return null;
+  };
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/events/${id}` } });
+      return;
+    }
+
+    const items = Object.entries(cart).map(([tierId, quantity]) => ({
+      tierId,
+      quantity,
+    }));
+
+    navigate('/checkout', {
+      state: { eventId: id, items, event },
+    });
+  };
+
+  const handleAdopt = (tierId) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/events/${id}` } });
+      return;
+    }
+
+    navigate('/adopt', {
+      state: { eventId: id, tierId, event },
+    });
+  };
+
+  const handleEnterLottery = async () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: `/events/${id}` } });
+      return;
+    }
+
+    setEnteringLottery(true);
+    try {
+      await api.enterLottery(id);
+      const eligibility = await api.checkLotteryEligibility(id);
+      setLotteryEntry(eligibility);
+      const stats = await api.getLotteryStats(id);
+      setLotteryStats(stats);
+      alert('Successfully entered the lottery!');
+    } catch (error) {
+      console.error('Failed to enter lottery:', error);
+      alert(error.message || 'Failed to enter lottery');
+    } finally {
+      setEnteringLottery(false);
+    }
+  };
+
+  const isSaleActive = (tier) => {
+    const now = new Date();
+    if (tier.sales_start && now < new Date(tier.sales_start)) return false;
+    if (tier.sales_end && now > new Date(tier.sales_end)) return false;
+    return tier.remaining_quantity > 0;
+  };
+
+  const getSaleStatus = (tier) => {
+    const now = new Date();
+    if (tier.sales_start && now < new Date(tier.sales_start)) {
+      return { text: 'Coming Soon', color: 'text-blue-600' };
+    }
+    if (tier.sales_end && now > new Date(tier.sales_end)) {
+      return { text: 'Ended', color: 'text-red-600' };
+    }
+    if (tier.remaining_quantity === 0) {
+      return { text: 'Sold Out', color: 'text-red-600' };
+    }
+    if (tier.remaining_quantity < 10) {
+      return { text: `Only ${tier.remaining_quantity} left!`, color: 'text-orange-600' };
+    }
+    return { text: 'Available', color: 'text-green-600' };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <p>Event not found</p>
+      </div>
+    );
+  }
+
+  const cartTotal = calculateTotal();
+  const cartItemCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Event Header */}
+      <div className="mb-8">
+        {event.banner_image_url && (
+          <img
+            src={event.banner_image_url}
+            alt={event.title}
+            className="w-full h-64 object-cover rounded-lg mb-6"
+          />
+        )}
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">{event.title}</h1>
+        <p className="text-gray-600 text-lg mb-6">{event.description}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <span>
+              {new Date(event.start_date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-blue-600" />
+            <span>{event.venue}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Lottery Info */}
+      {event.lottery_enabled && lotteryStats && (
+        <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-lg p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Gift className="w-8 h-8 text-yellow-600" />
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900">Adopt-a-Ticket Program</h2>
+              <p className="text-gray-700">Gift tickets to random entrants through our lottery system</p>
+            </div>
+            {isAuthenticated && (
+              <div>
+                {lotteryEntry?.hasEntered ? (
+                  lotteryEntry?.isWinner ? (
+                    <div className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2">
+                      <Gift className="w-5 h-5" />
+                      You Won!
+                    </div>
+                  ) : (
+                    <div className="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">
+                      Already Entered
+                    </div>
+                  )
+                ) : (
+                  <button
+                    onClick={handleEnterLottery}
+                    disabled={enteringLottery}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {enteringLottery ? 'Entering...' : 'Enter Lottery (Free)'}
+                  </button>
+                )}
+              </div>
+            )}
+            {!isAuthenticated && (
+              <button
+                onClick={() => navigate('/login', { state: { from: `/events/${id}` } })}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-bold transition-colors"
+              >
+                Login to Enter
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-blue-600">{lotteryStats.totalEntries}</p>
+              <p className="text-sm text-gray-600">Lottery Entries</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">{lotteryStats.availableTickets}</p>
+              <p className="text-sm text-gray-600">Tickets in Pool</p>
+            </div>
+            <div className="bg-white rounded-lg p-4 text-center">
+              <p className="text-2xl font-bold text-purple-600">{lotteryStats.totalWinners}</p>
+              <p className="text-sm text-gray-600">Winners</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ticket Tiers */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Tickets</h2>
+
+        {Object.entries(tiers).map(([category, categoryTiers]) => (
+          <div key={category} className="mb-8">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 uppercase tracking-wide">
+              {category}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categoryTiers.map((tier) => {
+                const status = getSaleStatus(tier);
+                const active = isSaleActive(tier);
+                const inCart = cart[tier.id] || 0;
+
+                return (
+                  <div
+                    key={tier.id}
+                    className={`border-2 rounded-lg p-6 ${active ? 'border-blue-300 bg-white' : 'border-gray-200 bg-gray-50'
+                      }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="text-lg font-bold text-gray-900">{tier.name}</h4>
+                      <span className={`text-sm font-semibold ${status.color}`}>{status.text}</span>
+                    </div>
+
+                    <p className="text-3xl font-bold text-blue-600 mb-4">
+                      KES {Number(tier.price).toLocaleString()}
+                    </p>
+
+                    {tier.tickets_per_unit > 1 && (
+                      <p className="text-sm text-gray-600 mb-3">
+                        <Users className="inline w-4 h-4 mr-1" />
+                        {tier.tickets_per_unit} tickets per unit
+                      </p>
+                    )}
+
+                    {tier.sales_start && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        <Clock className="inline w-3 h-3 mr-1" />
+                        Sales: {new Date(tier.sales_start).toLocaleDateString()} -{' '}
+                        {tier.sales_end ? new Date(tier.sales_end).toLocaleDateString() : 'Ongoing'}
+                      </p>
+                    )}
+
+                    <div className="flex gap-2 mt-4">
+                      {active ? (
+                        <>
+                          {inCart > 0 ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <button
+                                onClick={() => removeFromCart(tier.id)}
+                                className="bg-gray-200 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300"
+                              >
+                                -
+                              </button>
+                              <span className="flex-1 text-center font-semibold">{inCart}</span>
+                              <button
+                                onClick={() => addToCart(tier.id)}
+                                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700"
+                                disabled={inCart >= tier.max_qty_per_order}
+                              >
+                                +
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => addToCart(tier.id)}
+                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                            >
+                              Add to Cart
+                            </button>
+                          )}
+                          {event.lottery_enabled && (
+                            <button
+                              onClick={() => handleAdopt(tier.id)}
+                              className="bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600"
+                              title="Adopt this ticket"
+                            >
+                              <Gift className="w-5 h-5" />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <button disabled className="flex-1 bg-gray-300 text-gray-600 py-2 px-4 rounded-lg cursor-not-allowed">
+                          Not Available
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Cart Summary */}
+      {cartItemCount > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg p-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <ShoppingCart className="w-6 h-6 text-blue-600" />
+              <div>
+                <p className="font-semibold text-gray-900">
+                  {cartItemCount} item{cartItemCount > 1 ? 's' : ''} in cart
+                </p>
+                <p className="text-2xl font-bold text-blue-600">KES {cartTotal.toLocaleString()}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleCheckout}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-semibold text-lg"
+            >
+              Proceed to Checkout
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
