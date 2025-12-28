@@ -71,157 +71,196 @@ export default function AdminEventForm() {
     };
 
     useEffect(() => {
-    if (isEditing) {
-        loadEvent();
-    }
-}, [id]);
-
-const loadEvent = async () => {
-    try {
-        setLoading(true);
-        const event = await api.getEvent(id);
-
-        // Format dates for input fields
-        const formatDateTime = (date) => {
-            if (!date) return '';
-            return new Date(date).toISOString().slice(0, 16);
-        };
-
-        setFormData({
-            title: event.title || '',
-            description: event.description || '',
-            venue: event.venue || '',
-            start_date: formatDateTime(event.start_date),
-            end_date: formatDateTime(event.end_date),
-            status: event.status || 'DRAFT',
-            banner_image_url: event.banner_image_url || '',
-            lottery_enabled: event.lottery_enabled || false,
-            lottery_draw_date: formatDateTime(event.lottery_draw_date)
-        });
-
-        if (event.ticket_tiers) {
-            setTicketTiers(event.ticket_tiers);
-        }
-    } catch (err) {
-        console.error('Failed to load event:', err);
-        setError(err.message);
-    } finally {
-        setLoading(false);
-    }
-};
-
-const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-    }));
-};
-
-const handleTierChange = (e) => {
-    const { name, value, type } = e.target;
-    setNewTier(prev => ({
-        ...prev,
-        [name]: type === 'number' ? parseFloat(value) || '' : value
-    }));
-};
-
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    try {
-        setSaving(true);
-
-        const eventData = {
-            ...formData,
-            start_date: new Date(formData.start_date).toISOString(),
-            end_date: new Date(formData.end_date).toISOString(),
-            lottery_draw_date: formData.lottery_enabled && formData.lottery_draw_date
-                ? new Date(formData.lottery_draw_date).toISOString()
-                : null
-        };
-
         if (isEditing) {
-            await api.updateEvent(id, eventData);
-            setSuccess('Event updated successfully!');
-        } else {
-            const newEvent = await api.createEvent(eventData);
-            setSuccess('Event created successfully!');
-            setTimeout(() => {
-                navigate(`/admin/events/${newEvent.id}/edit`);
-            }, 1500);
+            loadEvent();
         }
-    } catch (err) {
-        console.error('Failed to save event:', err);
-        setError(err.message);
-    } finally {
-        setSaving(false);
-    }
-};
+    }, [id]);
 
-const formatDateTimeForInput = (isoString) => {
-    if (!isoString) return '';
-    try {
-        return new Date(isoString).toISOString().slice(0, 16);
-    } catch (e) {
-        return '';
-    }
-};
+    const loadEvent = async () => {
+        try {
+            setLoading(true);
+            const event = await api.getEvent(id);
 
-const handleEditTier = (tier) => {
-    setNewTier({
-        name: tier.name,
-        category: tier.category,
-        price: tier.price,
-        tickets_per_unit: tier.tickets_per_unit,
-        initial_quantity: tier.initial_quantity,
-        max_qty_per_order: tier.max_qty_per_order,
-        sales_start: formatDateTimeForInput(tier.sales_start),
-        sales_end: formatDateTimeForInput(tier.sales_end)
-    });
-    setEditingTierId(tier.id);
-    setShowTierForm(true);
-    // Scroll to form
-    const formElement = document.querySelector('.tier-form');
-    if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
-};
+            // Format dates for input fields
+            const formatDateTime = (date) => {
+                if (!date) return '';
+                return new Date(date).toISOString().slice(0, 16);
+            };
 
-const handleSaveTier = async () => {
-    if (!id) {
-        setError('Please save the event first before adding ticket tiers.');
-        return;
-    }
+            setFormData({
+                title: event.title || '',
+                description: event.description || '',
+                venue: event.venue || '',
+                start_date: formatDateTime(event.start_date),
+                end_date: formatDateTime(event.end_date),
+                status: event.status || 'DRAFT',
+                banner_image_url: event.banner_image_url || '',
+                lottery_enabled: event.lottery_enabled || false,
+                lottery_draw_date: formatDateTime(event.lottery_draw_date)
+            });
 
-    try {
-        setSaving(true);
-        const tierData = {
-            ...newTier,
-            price: parseFloat(newTier.price),
-            initial_quantity: parseInt(newTier.initial_quantity),
-            tickets_per_unit: parseInt(newTier.tickets_per_unit),
-            max_qty_per_order: parseInt(newTier.max_qty_per_order),
-            sales_start: new Date(newTier.sales_start).toISOString(),
-            sales_end: new Date(newTier.sales_end).toISOString(),
-            is_active: true
-        };
+            if (event.ticket_tiers) {
+                setTicketTiers(event.ticket_tiers);
+            }
+        } catch (err) {
+            console.error('Failed to load event:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        if (editingTierId) {
-            // For updates, we might not want to reset remaining_quantity if it's calculated from sales. 
-            // The backend likely ignores remaining_quantity on update or handles it.
-            // Let's remove remaining_quantity from update payload to be safe unless we want to reset it.
-            const { remaining_quantity, ...updateData } = tierData;
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
 
-            const updatedTier = await api.updateTier(id, editingTierId, updateData);
-            setTicketTiers(prev => prev.map(t => t.id === editingTierId ? updatedTier : t));
-            setSuccess('Ticket tier updated successfully!');
-        } else {
-            const createdTier = await api.createTier(id, tierData);
-            setTicketTiers([...ticketTiers, createdTier]);
-            setSuccess('Ticket tier added successfully!');
+    const handleTierChange = (e) => {
+        const { name, value, type } = e.target;
+        setNewTier(prev => ({
+            ...prev,
+            [name]: type === 'number' ? parseFloat(value) || '' : value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        setSuccess(null);
+
+        try {
+            setSaving(true);
+
+            const eventData = {
+                ...formData,
+                start_date: new Date(formData.start_date).toISOString(),
+                end_date: new Date(formData.end_date).toISOString(),
+                lottery_draw_date: formData.lottery_enabled && formData.lottery_draw_date
+                    ? new Date(formData.lottery_draw_date).toISOString()
+                    : null
+            };
+
+            if (isEditing) {
+                await api.updateEvent(id, eventData);
+                setSuccess('Event updated successfully!');
+            } else {
+                const newEvent = await api.createEvent(eventData);
+                setSuccess('Event created successfully!');
+                setTimeout(() => {
+                    navigate(`/admin/events/${newEvent.id}/edit`);
+                }, 1500);
+            }
+        } catch (err) {
+            console.error('Failed to save event:', err);
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const formatDateTimeForInput = (isoString) => {
+        if (!isoString) return '';
+        try {
+            return new Date(isoString).toISOString().slice(0, 16);
+        } catch (e) {
+            return '';
+        }
+    };
+
+    const handleEditTier = (tier) => {
+        setNewTier({
+            name: tier.name,
+            category: tier.category,
+            price: tier.price,
+            tickets_per_unit: tier.tickets_per_unit,
+            initial_quantity: tier.initial_quantity,
+            max_qty_per_order: tier.max_qty_per_order,
+            sales_start: formatDateTimeForInput(tier.sales_start),
+            sales_end: formatDateTimeForInput(tier.sales_end)
+        });
+        setEditingTierId(tier.id);
+        setShowTierForm(true);
+        // Scroll to form
+        const formElement = document.querySelector('.tier-form');
+        if (formElement) formElement.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handleSaveTier = async () => {
+        if (!id) {
+            setError('Please save the event first before adding ticket tiers.');
+            return;
         }
 
+        try {
+            setSaving(true);
+            const tierData = {
+                ...newTier,
+                price: parseFloat(newTier.price),
+                initial_quantity: parseInt(newTier.initial_quantity),
+                tickets_per_unit: parseInt(newTier.tickets_per_unit),
+                max_qty_per_order: parseInt(newTier.max_qty_per_order),
+                sales_start: new Date(newTier.sales_start).toISOString(),
+                sales_end: new Date(newTier.sales_end).toISOString(),
+                is_active: true
+            };
+
+            if (editingTierId) {
+                // For updates, we might not want to reset remaining_quantity if it's calculated from sales. 
+                // The backend likely ignores remaining_quantity on update or handles it.
+                // Let's remove remaining_quantity from update payload to be safe unless we want to reset it.
+                const { remaining_quantity, ...updateData } = tierData;
+
+                const updatedTier = await api.updateTier(id, editingTierId, updateData);
+                setTicketTiers(prev => prev.map(t => t.id === editingTierId ? updatedTier : t));
+                setSuccess('Ticket tier updated successfully!');
+            } else {
+                const createdTier = await api.createTier(id, tierData);
+                setTicketTiers([...ticketTiers, createdTier]);
+                setSuccess('Ticket tier added successfully!');
+            }
+
+            setShowTierForm(false);
+            setEditingTierId(null);
+            setNewTier({
+                name: '',
+                category: 'REGULAR',
+                price: '',
+                tickets_per_unit: 1,
+                initial_quantity: '',
+                max_qty_per_order: 10,
+                sales_start: '',
+                sales_end: ''
+            });
+        } catch (err) {
+            console.error('Failed to save tier:', err);
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteTier = async (tierId) => {
+        if (!window.confirm('Are you sure you want to delete this ticket tier?')) return;
+
+        try {
+            // Optimistic update
+            const originalTiers = [...ticketTiers];
+            setTicketTiers(prev => prev.filter(t => t.id !== tierId));
+
+            await api.deleteTier(id, tierId);
+            setSuccess('Ticket tier deleted successfully!');
+        } catch (err) {
+            console.error('Failed to delete tier:', err);
+            setError('Failed to delete tier. Please try again.');
+            // Revert
+            loadEvent();
+        }
+    };
+
+    const handleCancelTierForm = () => {
         setShowTierForm(false);
         setEditingTierId(null);
         setNewTier({
@@ -234,439 +273,408 @@ const handleSaveTier = async () => {
             sales_start: '',
             sales_end: ''
         });
-    } catch (err) {
-        console.error('Failed to save tier:', err);
-        setError(err.message);
-    } finally {
-        setSaving(false);
     }
-};
 
-const handleDeleteTier = async (tierId) => {
-    if (!window.confirm('Are you sure you want to delete this ticket tier?')) return;
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-KE', {
+            style: 'currency',
+            currency: 'KES',
+            minimumFractionDigits: 0
+        }).format(amount || 0);
+    };
 
-    try {
-        // Optimistic update
-        const originalTiers = [...ticketTiers];
-        setTicketTiers(prev => prev.filter(t => t.id !== tierId));
+    // ... existing formatCurrency ...
 
-        await api.deleteTier(id, tierId);
-        setSuccess('Ticket tier deleted successfully!');
-    } catch (err) {
-        console.error('Failed to delete tier:', err);
-        setError('Failed to delete tier. Please try again.');
-        // Revert
-        loadEvent();
+    if (loading) {
+        return (
+            <div className="admin-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading event...</p>
+            </div>
+        );
     }
-};
 
-const handleCancelTierForm = () => {
-    setShowTierForm(false);
-    setEditingTierId(null);
-    setNewTier({
-        name: '',
-        category: 'REGULAR',
-        price: '',
-        tickets_per_unit: 1,
-        initial_quantity: '',
-        max_qty_per_order: 10,
-        sales_start: '',
-        sales_end: ''
-    });
-}
-
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-KE', {
-        style: 'currency',
-        currency: 'KES',
-        minimumFractionDigits: 0
-    }).format(amount || 0);
-};
-
-// ... existing formatCurrency ...
-
-if (loading) {
     return (
-        <div className="admin-loading">
-            <div className="loading-spinner"></div>
-            <p>Loading event...</p>
-        </div>
-    );
-}
-
-return (
-    <div className="admin-page">
-        <div className="admin-page-header">
-            <div className="page-title">
-                <button onClick={() => navigate('/admin/events')} className="back-btn">
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <Calendar className="w-8 h-8" />
-                <div>
-                    <h1>{isEditing ? 'Edit Event' : 'Create New Event'}</h1>
-                    <p>{isEditing ? 'Update event details' : 'Fill in the event details'}</p>
-                </div>
-            </div>
-        </div>
-
-        {error && (
-            <div className="admin-error">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-            </div>
-        )}
-
-        {success && (
-            <div className="admin-success">
-                <Check className="w-5 h-5" />
-                <span>{success}</span>
-            </div>
-        )}
-
-        <div className="form-layout">
-            {/* Main Form */}
-            <form onSubmit={handleSubmit} className="admin-form">
-                {/* ... existing form fields ... */}
-                <div className="form-section">
-                    <h2 className="section-title">
-                        <FileText className="w-5 h-5" />
-                        Basic Information
-                    </h2>
-
-                    <div className="form-group">
-                        <label htmlFor="title">Event Title *</label>
-                        <input
-                            type="text"
-                            id="title"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleChange}
-                            placeholder="Enter event title"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="description">Description</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            placeholder="Enter event description"
-                            rows={5}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="venue">
-                            <MapPin className="w-4 h-4 inline mr-1" />
-                            Venue
-                        </label>
-                        <input
-                            type="text"
-                            id="venue"
-                            name="venue"
-                            value={formData.venue}
-                            onChange={handleChange}
-                            placeholder="Enter venue location"
-                        />
-                    </div>
-
-                    {/* Replace URL input with ImagePicker */}
-                    <ImagePicker
-                        label="Event Banner Image"
-                        currentImage={formData.banner_image_url}
-                        onImageSelect={(file) => {
-                            // File selected, will be uploaded if eventId exists
-                        }}
-                        onImageUpload={handleImageUpload}
-                        eventId={id}
-                    />
-                </div>
-
-                <div className="form-section">
-                    <h2 className="section-title">
-                        <Clock className="w-5 h-5" />
-                        Date & Time
-                    </h2>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="start_date">Start Date & Time *</label>
-                            <input
-                                type="datetime-local"
-                                id="start_date"
-                                name="start_date"
-                                value={formData.start_date}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="end_date">End Date & Time *</label>
-                            <input
-                                type="datetime-local"
-                                id="end_date"
-                                name="end_date"
-                                value={formData.end_date}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="status">Event Status</label>
-                        <select
-                            id="status"
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                        >
-                            <option value="DRAFT">Draft</option>
-                            <option value="PUBLISHED">Published</option>
-                            <option value="CANCELLED">Cancelled</option>
-                            <option value="COMPLETED">Completed</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="form-section">
-                    <h2 className="section-title">
-                        <Gift className="w-5 h-5" />
-                        Lottery Settings
-                    </h2>
-
-                    <div className="form-group checkbox-group">
-                        <label className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="lottery_enabled"
-                                checked={formData.lottery_enabled}
-                                onChange={handleChange}
-                            />
-                            <span className="checkmark"></span>
-                            Enable Lottery for this event
-                        </label>
-                        <p className="form-hint">Users can enter a lottery to win free tickets</p>
-                    </div>
-
-                    {formData.lottery_enabled && (
-                        <div className="form-group">
-                            <label htmlFor="lottery_draw_date">Lottery Draw Date</label>
-                            <input
-                                type="datetime-local"
-                                id="lottery_draw_date"
-                                name="lottery_draw_date"
-                                value={formData.lottery_draw_date}
-                                onChange={handleChange}
-                            />
-                        </div>
-                    )}
-                </div>
-
-                <div className="form-actions">
-                    <button type="button" className="btn-secondary" onClick={() => navigate('/admin/events')}>
-                        Cancel
+        <div className="admin-page">
+            <div className="admin-page-header">
+                <div className="page-title">
+                    <button onClick={() => navigate('/admin/events')} className="back-btn">
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <button type="submit" className="btn-primary" disabled={saving}>
-                        {saving ? (
-                            <>
-                                <Loader className="w-4 h-4 animate-spin" />
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                <Save className="w-4 h-4" />
-                                {isEditing ? 'Update Event' : 'Create Event'}
-                            </>
-                        )}
-                    </button>
+                    <Calendar className="w-8 h-8" />
+                    <div>
+                        <h1>{isEditing ? 'Edit Event' : 'Create New Event'}</h1>
+                        <p>{isEditing ? 'Update event details' : 'Fill in the event details'}</p>
+                    </div>
                 </div>
-            </form>
+            </div>
 
-            {/* Ticket Tiers Section (only for editing) */}
-            {isEditing && (
-                <div className="admin-card tiers-section">
-                    <div className="card-header">
-                        <h2>
-                            <Ticket className="w-5 h-5" />
-                            Ticket Tiers
-                        </h2>
-                        <button
-                            type="button"
-                            className="btn-secondary"
-                            onClick={() => {
-                                setEditingTierId(null);
-                                setNewTier({
-                                    name: '',
-                                    category: 'REGULAR',
-                                    price: '',
-                                    tickets_per_unit: 1,
-                                    initial_quantity: '',
-                                    max_qty_per_order: 10,
-                                    sales_start: '',
-                                    sales_end: ''
-                                });
-                                setShowTierForm(!showTierForm);
-                            }}
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Tier
-                        </button>
-                    </div>
-
-                    {showTierForm && (
-                        <div className="tier-form">
-                            <h3>{editingTierId ? 'Edit Ticket Tier' : 'New Ticket Tier'}</h3>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Tier Name *</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={newTier.name}
-                                        onChange={handleTierChange}
-                                        placeholder="e.g., VIP Table"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Category *</label>
-                                    <select
-                                        name="category"
-                                        value={newTier.category}
-                                        onChange={handleTierChange}
-                                    >
-                                        <option value="REGULAR">Regular</option>
-                                        <option value="VIP">VIP</option>
-                                        <option value="VVIP">VVIP</option>
-                                        <option value="STUDENT">Student</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Price (KES) *</label>
-                                    <input
-                                        type="number"
-                                        name="price"
-                                        value={newTier.price}
-                                        onChange={handleTierChange}
-                                        placeholder="2000"
-                                        min="0"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Tickets Per Unit</label>
-                                    <input
-                                        type="number"
-                                        name="tickets_per_unit"
-                                        value={newTier.tickets_per_unit}
-                                        onChange={handleTierChange}
-                                        min="1"
-                                    />
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Total Quantity *</label>
-                                    <input
-                                        type="number"
-                                        name="initial_quantity"
-                                        value={newTier.initial_quantity}
-                                        onChange={handleTierChange}
-                                        placeholder="100"
-                                        min="1"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Max Per Order</label>
-                                    <input
-                                        type="number"
-                                        name="max_qty_per_order"
-                                        value={newTier.max_qty_per_order}
-                                        onChange={handleTierChange}
-                                        min="1"
-                                    />
-                                </div>
-                            </div>
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Sales Start *</label>
-                                    <input
-                                        type="datetime-local"
-                                        name="sales_start"
-                                        value={newTier.sales_start}
-                                        onChange={handleTierChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Sales End *</label>
-                                    <input
-                                        type="datetime-local"
-                                        name="sales_end"
-                                        value={newTier.sales_end}
-                                        onChange={handleTierChange}
-                                    />
-                                </div>
-                            </div>
-                            <div className="tier-form-actions">
-                                <button type="button" className="btn-secondary" onClick={handleCancelTierForm}>
-                                    Cancel
-                                </button>
-                                <button type="button" className="btn-primary" onClick={handleSaveTier} disabled={saving}>
-                                    {saving ? (editingTierId ? 'Updating...' : 'Adding...') : (editingTierId ? 'Update Tier' : 'Add Tier')}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="tiers-list">
-                        {ticketTiers.length === 0 ? (
-                            <div className="empty-state">
-                                <Ticket className="w-10 h-10" />
-                                <p>No ticket tiers yet</p>
-                            </div>
-                        ) : (
-                            ticketTiers.map((tier) => (
-                                <div key={tier.id} className="tier-item">
-                                    <div className="tier-info">
-                                        <span className={`tier-category cat-${tier.category?.toLowerCase()}`}>
-                                            {tier.category}
-                                        </span>
-                                        <h4>{tier.name}</h4>
-                                        <p>{formatCurrency(tier.price)} × {tier.tickets_per_unit} ticket(s)</p>
-                                    </div>
-                                    <div className="tier-stats-actions">
-                                        <span className="tier-availability">
-                                            {tier.remaining_quantity} / {tier.initial_quantity} available
-                                        </span>
-                                        <div className="row-actions">
-                                            <button
-                                                onClick={() => handleEditTier(tier)}
-                                                className="action-btn edit"
-                                                title="Edit Tier"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteTier(tier.id)}
-                                                className="action-btn delete"
-                                                title="Delete Tier"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
+            {error && (
+                <div className="admin-error">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>{error}</span>
                 </div>
             )}
+
+            {success && (
+                <div className="admin-success">
+                    <Check className="w-5 h-5" />
+                    <span>{success}</span>
+                </div>
+            )}
+
+            <div className="form-layout">
+                {/* Main Form */}
+                <form onSubmit={handleSubmit} className="admin-form">
+                    {/* ... existing form fields ... */}
+                    <div className="form-section">
+                        <h2 className="section-title">
+                            <FileText className="w-5 h-5" />
+                            Basic Information
+                        </h2>
+
+                        <div className="form-group">
+                            <label htmlFor="title">Event Title *</label>
+                            <input
+                                type="text"
+                                id="title"
+                                name="title"
+                                value={formData.title}
+                                onChange={handleChange}
+                                placeholder="Enter event title"
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="description">Description</label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                placeholder="Enter event description"
+                                rows={5}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="venue">
+                                <MapPin className="w-4 h-4 inline mr-1" />
+                                Venue
+                            </label>
+                            <input
+                                type="text"
+                                id="venue"
+                                name="venue"
+                                value={formData.venue}
+                                onChange={handleChange}
+                                placeholder="Enter venue location"
+                            />
+                        </div>
+
+                        {/* Replace URL input with ImagePicker */}
+                        <ImagePicker
+                            label="Event Banner Image"
+                            currentImage={formData.banner_image_url}
+                            onImageSelect={(file) => {
+                                // File selected, will be uploaded if eventId exists
+                            }}
+                            onImageUpload={handleImageUpload}
+                            eventId={id}
+                        />
+                    </div>
+
+                    <div className="form-section">
+                        <h2 className="section-title">
+                            <Clock className="w-5 h-5" />
+                            Date & Time
+                        </h2>
+
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label htmlFor="start_date">Start Date & Time *</label>
+                                <input
+                                    type="datetime-local"
+                                    id="start_date"
+                                    name="start_date"
+                                    value={formData.start_date}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="end_date">End Date & Time *</label>
+                                <input
+                                    type="datetime-local"
+                                    id="end_date"
+                                    name="end_date"
+                                    value={formData.end_date}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="status">Event Status</label>
+                            <select
+                                id="status"
+                                name="status"
+                                value={formData.status}
+                                onChange={handleChange}
+                            >
+                                <option value="DRAFT">Draft</option>
+                                <option value="PUBLISHED">Published</option>
+                                <option value="CANCELLED">Cancelled</option>
+                                <option value="COMPLETED">Completed</option>
+                                {user?.role === 'ADMIN' && (
+                                    <option value="ARCHIVED">Archived (Admin Only)</option>
+                                )}
+                            </select>
+                            {formData.status === 'ARCHIVED' && (
+                                <p className="form-hint" style={{ color: '#ff9800', marginTop: '0.5rem' }}>
+                                    ⚠️ Only admins can set or modify archived events
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="form-section">
+                        <h2 className="section-title">
+                            <Gift className="w-5 h-5" />
+                            Lottery Settings
+                        </h2>
+
+                        <div className="form-group checkbox-group">
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="lottery_enabled"
+                                    checked={formData.lottery_enabled}
+                                    onChange={handleChange}
+                                />
+                                <span className="checkmark"></span>
+                                Enable Lottery for this event
+                            </label>
+                            <p className="form-hint">Users can enter a lottery to win free tickets</p>
+                        </div>
+
+                        {formData.lottery_enabled && (
+                            <div className="form-group">
+                                <label htmlFor="lottery_draw_date">Lottery Draw Date</label>
+                                <input
+                                    type="datetime-local"
+                                    id="lottery_draw_date"
+                                    name="lottery_draw_date"
+                                    value={formData.lottery_draw_date}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="form-actions">
+                        <button type="button" className="btn-secondary" onClick={() => navigate('/admin/events')}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn-primary" disabled={saving}>
+                            {saving ? (
+                                <>
+                                    <Loader className="w-4 h-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4" />
+                                    {isEditing ? 'Update Event' : 'Create Event'}
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+
+                {/* Ticket Tiers Section (only for editing) */}
+                {isEditing && (
+                    <div className="admin-card tiers-section">
+                        <div className="card-header">
+                            <h2>
+                                <Ticket className="w-5 h-5" />
+                                Ticket Tiers
+                            </h2>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => {
+                                    setEditingTierId(null);
+                                    setNewTier({
+                                        name: '',
+                                        category: 'REGULAR',
+                                        price: '',
+                                        tickets_per_unit: 1,
+                                        initial_quantity: '',
+                                        max_qty_per_order: 10,
+                                        sales_start: '',
+                                        sales_end: ''
+                                    });
+                                    setShowTierForm(!showTierForm);
+                                }}
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Tier
+                            </button>
+                        </div>
+
+                        {showTierForm && (
+                            <div className="tier-form">
+                                <h3>{editingTierId ? 'Edit Ticket Tier' : 'New Ticket Tier'}</h3>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Tier Name *</label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={newTier.name}
+                                            onChange={handleTierChange}
+                                            placeholder="e.g., VIP Table"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Category *</label>
+                                        <select
+                                            name="category"
+                                            value={newTier.category}
+                                            onChange={handleTierChange}
+                                        >
+                                            <option value="REGULAR">Regular</option>
+                                            <option value="VIP">VIP</option>
+                                            <option value="VVIP">VVIP</option>
+                                            <option value="STUDENT">Student</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Price (KES) *</label>
+                                        <input
+                                            type="number"
+                                            name="price"
+                                            value={newTier.price}
+                                            onChange={handleTierChange}
+                                            placeholder="2000"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Tickets Per Unit</label>
+                                        <input
+                                            type="number"
+                                            name="tickets_per_unit"
+                                            value={newTier.tickets_per_unit}
+                                            onChange={handleTierChange}
+                                            min="1"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Total Quantity *</label>
+                                        <input
+                                            type="number"
+                                            name="initial_quantity"
+                                            value={newTier.initial_quantity}
+                                            onChange={handleTierChange}
+                                            placeholder="100"
+                                            min="1"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Max Per Order</label>
+                                        <input
+                                            type="number"
+                                            name="max_qty_per_order"
+                                            value={newTier.max_qty_per_order}
+                                            onChange={handleTierChange}
+                                            min="1"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Sales Start *</label>
+                                        <input
+                                            type="datetime-local"
+                                            name="sales_start"
+                                            value={newTier.sales_start}
+                                            onChange={handleTierChange}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Sales End *</label>
+                                        <input
+                                            type="datetime-local"
+                                            name="sales_end"
+                                            value={newTier.sales_end}
+                                            onChange={handleTierChange}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="tier-form-actions">
+                                    <button type="button" className="btn-secondary" onClick={handleCancelTierForm}>
+                                        Cancel
+                                    </button>
+                                    <button type="button" className="btn-primary" onClick={handleSaveTier} disabled={saving}>
+                                        {saving ? (editingTierId ? 'Updating...' : 'Adding...') : (editingTierId ? 'Update Tier' : 'Add Tier')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="tiers-list">
+                            {ticketTiers.length === 0 ? (
+                                <div className="empty-state">
+                                    <Ticket className="w-10 h-10" />
+                                    <p>No ticket tiers yet</p>
+                                </div>
+                            ) : (
+                                ticketTiers.map((tier) => (
+                                    <div key={tier.id} className="tier-item">
+                                        <div className="tier-info">
+                                            <span className={`tier-category cat-${tier.category?.toLowerCase()}`}>
+                                                {tier.category}
+                                            </span>
+                                            <h4>{tier.name}</h4>
+                                            <p>{formatCurrency(tier.price)} × {tier.tickets_per_unit} ticket(s)</p>
+                                        </div>
+                                        <div className="tier-stats-actions">
+                                            <span className="tier-availability">
+                                                {tier.remaining_quantity} / {tier.initial_quantity} available
+                                            </span>
+                                            <div className="row-actions">
+                                                <button
+                                                    onClick={() => handleEditTier(tier)}
+                                                    className="action-btn edit"
+                                                    title="Edit Tier"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteTier(tier.id)}
+                                                    className="action-btn delete"
+                                                    title="Delete Tier"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
 }

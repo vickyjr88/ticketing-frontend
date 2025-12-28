@@ -1,21 +1,40 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Calendar, MapPin, Ticket, Gift, Plus } from 'lucide-react';
 import { api } from '../services/api';
-import { Calendar, MapPin, Ticket } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import './Events.css';
 
 export default function Events() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [events, setEvents] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
+  const [lotteryEntries, setLotteryEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'my-events', 'lottery'
 
   useEffect(() => {
-    loadEvents();
-  }, []);
+    loadData();
+  }, [user]);
 
-  const loadEvents = async () => {
+  const loadData = async () => {
     try {
-      const data = await api.getEvents();
-      setEvents(data);
+      setLoading(true);
+      
+      // Load all published events
+      const allEvents = await api.getEvents();
+      setEvents(allEvents);
+
+      // If user is logged in, load their events and lottery entries
+      if (user) {
+        const [userEvents, entries] = await Promise.all([
+          api.getMyEvents(),
+          api.getMyLotteryEntries()
+        ]);
+        setMyEvents(userEvents);
+        setLotteryEntries(entries);
+      }
     } catch (error) {
       console.error('Failed to load events:', error);
     } finally {
@@ -25,88 +44,245 @@ export default function Events() {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
+      weekday: 'short',
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     });
+  };
+
+  const getMinPrice = (tiers) => {
+    if (!tiers || tiers.length === 0) return null;
+    const prices = tiers.map(t => t.price);
+    return Math.min(...prices);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const isUserEntered = (eventId) => {
+    return lotteryEntries.some(entry => entry.event_id === eventId);
+  };
+
+  const renderEventCard = (event, showLotteryBadge = false) => {
+    const minPrice = getMinPrice(event.ticket_tiers);
+    const hasEntered = isUserEntered(event.id);
+
+    return (
+      <div
+        key={event.id}
+        className="event-card"
+        onClick={() => navigate(`/events/${event.id}`)}
+      >
+        {event.banner_image_url && (
+          <div className="event-image">
+            <img src={event.banner_image_url} alt={event.title} />
+            {event.lottery_enabled && (
+              <div className="lottery-badge">
+                <Gift className="w-4 h-4" />
+                <span>Lottery</span>
+              </div>
+            )}
+            {showLotteryBadge && hasEntered && (
+              <div className="entered-badge">
+                <Gift className="w-4 h-4" />
+                <span>Entered</span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <div className="event-content">
+          <h3>{event.title}</h3>
+          
+          <div className="event-meta">
+            <div className="meta-item">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(event.start_date)}</span>
+            </div>
+            
+            {event.venue && (
+              <div className="meta-item">
+                <MapPin className="w-4 h-4" />
+                <span>{event.venue}</span>
+              </div>
+            )}
+          </div>
+
+          {event.description && (
+            <p className="event-description">{event.description}</p>
+          )}
+
+          <div className="event-footer">
+            {minPrice && (
+              <div className="price">
+                <Ticket className="w-4 h-4" />
+                <span>From {formatCurrency(minPrice)}</span>
+              </div>
+            )}
+            
+            <button className="btn-view">View Details</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderLotteryEventCard = (entry) => {
+    const event = entry.event;
+    if (!event) return null;
+
+    return (
+      <div
+        key={entry.id}
+        className="event-card lottery-entry-card"
+        onClick={() => navigate(`/events/${event.id}`)}
+      >
+        {event.banner_image_url && (
+          <div className="event-image">
+            <img src={event.banner_image_url} alt={event.title} />
+            <div className={`status-badge ${entry.is_winner ? 'winner' : 'pending'}`}>
+              <Gift className="w-4 h-4" />
+              <span>{entry.is_winner ? 'Winner!' : 'Entered'}</span>
+            </div>
+          </div>
+        )}
+        
+        <div className="event-content">
+          <h3>{event.title}</h3>
+          
+          <div className="event-meta">
+            <div className="meta-item">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(event.start_date)}</span>
+            </div>
+            
+            {event.venue && (
+              <div className="meta-item">
+                <MapPin className="w-4 h-4" />
+                <span>{event.venue}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="lottery-info">
+            <p className="entry-date">
+              Entered: {formatDate(entry.created_at)}
+            </p>
+            {entry.is_winner && entry.won_at && (
+              <p className="won-date">
+                Won: {formatDate(entry.won_at)}
+              </p>
+            )}
+          </div>
+
+          <button className="btn-view">
+            {entry.is_winner ? 'View Ticket' : 'View Event'}
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="events-page">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading events...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Upcoming Events</h1>
-        <p className="text-gray-600">Discover amazing events happening near you</p>
+    <div className="events-page">
+      <div className="events-header">
+        <div>
+          <h1>Events</h1>
+          <p>Discover and book tickets for amazing events</p>
+        </div>
+        
+        {user && (
+          <button
+            className="btn-create"
+            onClick={() => navigate('/admin/events/new')}
+          >
+            <Plus className="w-5 h-5" />
+            Create Event
+          </button>
+        )}
       </div>
 
-      {events.length === 0 ? (
-        <div className="text-center py-12">
-          <Ticket className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No events available</h3>
-          <p className="text-gray-500">Check back later for upcoming events</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-              onClick={() => navigate(`/events/${event.id}`)}
-            >
-              {event.banner_image_url && (
-                <img
-                  src={event.banner_image_url}
-                  alt={event.title}
-                  className="w-full h-48 object-cover"
-                />
-              )}
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{event.title}</h2>
-                <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
-
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{formatDate(event.start_date)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{event.venue}</span>
-                  </div>
-                </div>
-
-                <button
-                  className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/events/${event.id}`);
-                  }}
-                >
-                  Get Tickets
-                </button>
-
-                {event.lottery_enabled && (
-                  <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <p className="text-sm text-yellow-800 font-medium">
-                      🎉 Lottery Available - Adopt a ticket!
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+      {user && (
+        <div className="events-tabs">
+          <button
+            className={`tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            All Events ({events.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'my-events' ? 'active' : ''}`}
+            onClick={() => setActiveTab('my-events')}
+          >
+            My Events ({myEvents.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'lottery' ? 'active' : ''}`}
+            onClick={() => setActiveTab('lottery')}
+          >
+            <Gift className="w-4 h-4" />
+            Lottery Entries ({lotteryEntries.length})
+          </button>
         </div>
       )}
+
+      <div className="events-grid">
+        {activeTab === 'all' && events.length === 0 && (
+          <div className="empty-state">
+            <Calendar className="w-16 h-16" />
+            <h3>No events available</h3>
+            <p>Check back later for upcoming events</p>
+          </div>
+        )}
+
+        {activeTab === 'all' && events.map(event => renderEventCard(event, true))}
+
+        {activeTab === 'my-events' && myEvents.length === 0 && (
+          <div className="empty-state">
+            <Ticket className="w-16 h-16" />
+            <h3>No events created yet</h3>
+            <p>Create your first event to get started</p>
+            <button
+              className="btn-primary"
+              onClick={() => navigate('/admin/events/new')}
+            >
+              <Plus className="w-5 h-5" />
+              Create Event
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'my-events' && myEvents.map(event => renderEventCard(event))}
+
+        {activeTab === 'lottery' && lotteryEntries.length === 0 && (
+          <div className="empty-state">
+            <Gift className="w-16 h-16" />
+            <h3>No lottery entries yet</h3>
+            <p>Enter a lottery to win free tickets</p>
+          </div>
+        )}
+
+        {activeTab === 'lottery' && lotteryEntries.map(entry => renderLotteryEventCard(entry))}
+      </div>
     </div>
   );
 }

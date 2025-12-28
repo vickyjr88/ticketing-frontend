@@ -43,8 +43,14 @@ export default function AdminEvents() {
 
             let data;
             if (user?.role === 'ADMIN') {
-                data = await api.getEvents(status);
+                // Admin sees ALL events regardless of creator or status
+                data = await api.getAllEventsAdmin();
+                // Client-side filter by status if needed
+                if (status) {
+                    data = data.filter(e => e.status === status);
+                }
             } else {
+                // Regular users see only their own events
                 data = await api.getMyEvents();
                 // Client-side filter for my-events
                 if (status) {
@@ -98,7 +104,8 @@ export default function AdminEvents() {
             PUBLISHED: { class: 'status-published', icon: CheckCircle, label: 'Published' },
             DRAFT: { class: 'status-draft', icon: Clock, label: 'Draft' },
             CANCELLED: { class: 'status-cancelled', icon: XCircle, label: 'Cancelled' },
-            COMPLETED: { class: 'status-completed', icon: CheckCircle, label: 'Completed' }
+            COMPLETED: { class: 'status-completed', icon: CheckCircle, label: 'Completed' },
+            ARCHIVED: { class: 'status-archived', icon: AlertCircle, label: 'Archived' }
         };
         const badge = badges[status] || badges.DRAFT;
         const Icon = badge.icon;
@@ -170,6 +177,9 @@ export default function AdminEvents() {
                         <option value="draft">Draft</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="completed">Completed</option>
+                        {user?.role === 'ADMIN' && (
+                            <option value="archived">Archived</option>
+                        )}
                     </select>
                 </div>
             </div>

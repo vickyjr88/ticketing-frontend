@@ -66,6 +66,24 @@ class ApiService {
     return this.request(`/events/${eventId}/tiers`);
   }
 
+  // Admin methods
+  async getAllEventsAdmin() {
+    return this.request('/events/admin/all');
+  }
+
+  async updateEventStatus(eventId, status) {
+    return this.request(`/events/admin/${eventId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async deleteEventAdmin(eventId) {
+    return this.request(`/events/admin/${eventId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async createEvent(eventData) {
     return this.request('/events', {
       method: 'POST',

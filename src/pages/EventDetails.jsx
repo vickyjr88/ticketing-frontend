@@ -14,7 +14,7 @@ export default function EventDetails() {
   const [cart, setCart] = useState({});
   const [loading, setLoading] = useState(true);
   const [lotteryStats, setLotteryStats] = useState(null);
-  const [lotteryEntry, setLotteryEntry] = useState(null);
+  const [isEligible, setIsEligible] = useState(true);
   const [enteringLottery, setEnteringLottery] = useState(false);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function EventDetails() {
         if (isAuthenticated) {
           try {
             const eligibility = await api.checkLotteryEligibility(id);
-            setLotteryEntry(eligibility);
+            setIsEligible(eligibility.eligible);
           } catch (error) {
             console.error('Failed to check lottery eligibility:', error);
           }
@@ -122,8 +122,7 @@ export default function EventDetails() {
     setEnteringLottery(true);
     try {
       await api.enterLottery(id);
-      const eligibility = await api.checkLotteryEligibility(id);
-      setLotteryEntry(eligibility);
+      setIsEligible(false);
       const stats = await api.getLotteryStats(id);
       setLotteryStats(stats);
       alert('Successfully entered the lottery!');
@@ -224,17 +223,10 @@ export default function EventDetails() {
             </div>
             {isAuthenticated && (
               <div>
-                {lotteryEntry?.hasEntered ? (
-                  lotteryEntry?.isWinner ? (
-                    <div className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2">
-                      <Gift className="w-5 h-5" />
-                      You Won!
-                    </div>
-                  ) : (
-                    <div className="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">
-                      Already Entered
-                    </div>
-                  )
+                {!isEligible ? (
+                  <div className="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold">
+                    Already Entered
+                  </div>
                 ) : (
                   <button
                     onClick={handleEnterLottery}

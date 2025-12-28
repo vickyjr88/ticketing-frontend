@@ -1668,6 +1668,10 @@ body {
   color: #2563eb;
 }
 
+.status-archived {
+  color: #6b7280;
+}
+
 .event-content {
   padding: 1.5rem;
   flex: 1;
