@@ -1,15 +1,17 @@
-name: Deploy Frontend to AWS
+name: Deploy Ticketing Frontend to AWS
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'web_ticketing/**'
   workflow_dispatch:
 
 env:
-  AWS_REGION: eu-north-1
-  ECR_REPOSITORY: agency-app-frontend
-  ECR_REGISTRY: 767398109480.dkr.ecr.eu-north-1.amazonaws.com
-  CONTAINER_NAME: dexter_frontend
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: vdm-agency-ticketing-frontend
+  ECR_REGISTRY: 767398109480.dkr.ecr.us-east-1.amazonaws.com
+  CONTAINER_NAME: ticketing-frontend
 
 jobs:
   deploy:
@@ -35,9 +37,10 @@ jobs:
       id: build-image
       env:
         IMAGE_TAG: latest
+        VITE_API_URL: http://3.225.246.72:4001/api
       run: |
         # Build for linux/amd64 to match EC2 instance architecture
-        docker build --platform linux/amd64 -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker build --platform linux/amd64 --build-arg VITE_API_URL=$VITE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
@@ -51,14 +54,16 @@ jobs:
           # Login to ECR
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
           
-          # Navigate to app directory
-          cd ~/dexter-app
+          # Stop existing container if running
+          docker stop ticketing-frontend || true
+          docker rm ticketing-frontend || true
           
-          # Pull latest image
-          docker-compose -f docker-compose.prod.yml pull frontend
-          
-          # Restart frontend container
-          docker-compose -f docker-compose.prod.yml up -d --no-deps frontend
+          # Pull and run latest image
+          docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          docker run -d --name ticketing-frontend \
+            --network vdm-network \
+            -p 3000:80 \
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
           
           # Prune old images to save space
           docker image prune -f
