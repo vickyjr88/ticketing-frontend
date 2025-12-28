@@ -199,21 +199,21 @@ export default function AdminLottery() {
                                 <div className="lottery-stat-card">
                                     <Users className="w-8 h-8 text-blue-500" />
                                     <div>
-                                        <span className="stat-value">{lotteryStats?.total_entries || 0}</span>
+                                        <span className="stat-value">{lotteryStats?.totalEntries || 0}</span>
                                         <span className="stat-label">Total Entries</span>
                                     </div>
                                 </div>
                                 <div className="lottery-stat-card">
                                     <Ticket className="w-8 h-8 text-purple-500" />
                                     <div>
-                                        <span className="stat-value">{lotteryStats?.available_tickets || 0}</span>
+                                        <span className="stat-value">{lotteryStats?.availableTickets || 0}</span>
                                         <span className="stat-label">Available Prizes</span>
                                     </div>
                                 </div>
                                 <div className="lottery-stat-card">
                                     <Trophy className="w-8 h-8 text-yellow-500" />
                                     <div>
-                                        <span className="stat-value">{winners.length}</span>
+                                        <span className="stat-value">{lotteryStats?.totalWinners || 0}</span>
                                         <span className="stat-label">Winners Selected</span>
                                     </div>
                                 </div>

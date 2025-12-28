@@ -105,7 +105,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="stat-content">
                         <p className="stat-label">Total Revenue</p>
-                        <h3 className="stat-value">{formatCurrency(stats?.totalRevenue)}</h3>
+                        <h3 className="stat-value">{formatCurrency(stats?.totalRevenue || 0)}</h3>
                         <div className="stat-change positive">
                             <ArrowUpRight className="w-4 h-4" />
                             <span>+12.5% from last month</span>
