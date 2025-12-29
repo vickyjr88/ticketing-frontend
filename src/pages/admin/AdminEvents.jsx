@@ -17,7 +17,9 @@ import {
     AlertCircle,
     CheckCircle,
     XCircle,
-    Bell
+
+    Bell,
+    BarChart
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -40,6 +42,12 @@ export default function AdminEvents() {
     const [waitlistStats, setWaitlistStats] = useState(null);
     const [loadingWaitlist, setLoadingWaitlist] = useState(false);
     const [selectedEventForWaitlist, setSelectedEventForWaitlist] = useState(null);
+
+    // Gate Stats state
+    const [gateStatsModalOpen, setGateStatsModalOpen] = useState(false);
+    const [gateStats, setGateStats] = useState(null);
+    const [loadingGateStats, setLoadingGateStats] = useState(false);
+    const [selectedEventForGate, setSelectedEventForGate] = useState(null);
 
     useEffect(() => {
         loadEvents();
@@ -106,6 +114,23 @@ export default function AdminEvents() {
             // Don't show error to user, just show empty or partial state
         } finally {
             setLoadingWaitlist(false);
+        }
+    };
+
+    const handleViewGateStats = async (event) => {
+        setSelectedEventForGate(event);
+        setGateStatsModalOpen(true);
+        setGateStats(null);
+        setLoadingGateStats(true);
+
+        try {
+            const stats = await api.getGateStats(event.id);
+            // Expected format: [{ gate: 'Gate A', count: 10 }, ...]
+            setGateStats(stats);
+        } catch (err) {
+            console.error('Failed to load gate stats:', err);
+        } finally {
+            setLoadingGateStats(false);
         }
     };
 
@@ -285,6 +310,13 @@ export default function AdminEvents() {
                                 >
                                     <Bell className="w-4 h-4" />
                                 </button>
+                                <button
+                                    className="action-btn view"
+                                    title="View Gate Stats"
+                                    onClick={() => handleViewGateStats(event)}
+                                >
+                                    <BarChart className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
                     ))
@@ -386,6 +418,74 @@ export default function AdminEvents() {
                     </div>
                 </div>
             )}
-        </div>
+
+
+            {/* Gate Stats Modal */}
+            {
+                gateStatsModalOpen && selectedEventForGate && (
+                    <div className="modal-overlay" onClick={() => setGateStatsModalOpen(false)}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <BarChart className="w-8 h-8 text-indigo-600" />
+                                <div>
+                                    <h2>Gate Ingress Stats</h2>
+                                    <p className="text-sm text-gray-500">{selectedEventForGate.title}</p>
+                                </div>
+                            </div>
+                            <div className="modal-body">
+                                {loadingGateStats ? (
+                                    <div className="loading-spinner"></div>
+                                ) : !gateStats || gateStats.length === 0 ? (
+                                    <div className="text-center py-6 text-gray-500">
+                                        <p>No ingress activity yet.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-gray-600 mb-4">
+                                            Real-time check-in counts by gate.
+                                        </p>
+                                        <div className="space-y-3">
+                                            {gateStats.map((stat, index) => {
+                                                const total = gateStats.reduce((acc, curr) => acc + parseInt(curr.count), 0);
+                                                const percentage = total > 0 ? Math.round((parseInt(stat.count) / total) * 100) : 0;
+
+                                                return (
+                                                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="font-semibold text-gray-800">{stat.gate}</span>
+                                                            <span className="font-bold text-indigo-600">{stat.count} check-ins</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                            <div
+                                                                className="bg-indigo-600 h-2.5 rounded-full"
+                                                                style={{ width: `${percentage}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 text-right mt-1">{percentage}% of total</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="mt-4 pt-4 border-t border-gray-100 text-right">
+                                            <p className="font-bold text-gray-800">
+                                                Total Check-ins: {gateStats.reduce((acc, curr) => acc + parseInt(curr.count), 0)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-actions">
+                                <button
+                                    className="btn-secondary"
+                                    onClick={() => setGateStatsModalOpen(false)}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }

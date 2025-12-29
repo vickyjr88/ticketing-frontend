@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { checkPaystackTransaction } from '../services/api'; // Wait, I just named it verifyPaystack.
 import api from '../services/api';
 import { Loader, Check, AlertCircle } from 'lucide-react';
 

@@ -204,6 +204,13 @@ class ApiService {
     });
   }
 
+  async updateUserGate(userId, gate) {
+    return this.request(`/admin/users/${userId}/gate`, {
+      method: 'PATCH',
+      body: JSON.stringify({ gate }),
+    });
+  }
+
   // Payments
   async initiatePayment(orderId, paymentData) {
     return this.request(`/payments/initiate/${orderId}`, {
@@ -249,6 +256,10 @@ class ApiService {
 
   async getScannerStats() {
     return this.request('/tickets/scanner/stats');
+  }
+
+  async getGateStats(eventId) {
+    return this.request(`/tickets/scanner/stats/${eventId}`);
   }
 
   // Lottery

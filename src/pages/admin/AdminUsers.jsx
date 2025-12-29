@@ -15,7 +15,8 @@ import {
     CheckCircle,
     AlertCircle,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    MapPin
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -30,6 +31,7 @@ export default function AdminUsers() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [assignedGate, setAssignedGate] = useState('');
 
     useEffect(() => {
         loadUsers();
@@ -87,14 +89,36 @@ export default function AdminUsers() {
         try {
             setSaving(true);
             await api.updateUserRole(selectedUser.id, newRole);
+
+            if (newRole === 'SCANNER' && assignedGate) {
+                await api.updateUserGate(selectedUser.id, assignedGate);
+            }
             setUsers(users.map(u =>
-                u.id === selectedUser.id ? { ...u, role: newRole } : u
+                u.id === selectedUser.id ? { ...u, role: newRole, assigned_gate: newRole === 'SCANNER' ? assignedGate : null } : u
             ));
             setEditModalOpen(false);
             setSelectedUser(null);
+            setAssignedGate('');
         } catch (err) {
             console.error('Failed to update user:', err);
             setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleGateChange = async () => {
+        if (!selectedUser || !assignedGate) return;
+        try {
+            setSaving(true);
+            await api.updateUserGate(selectedUser.id, assignedGate);
+            setUsers(users.map(u =>
+                u.id === selectedUser.id ? { ...u, assigned_gate: assignedGate } : u
+            ));
+            // Don't close modal, just show success? Or close.
+            // For now, let's just update state.
+        } catch (err) {
+            console.error(err);
         } finally {
             setSaving(false);
         }
@@ -251,6 +275,12 @@ export default function AdminUsers() {
                                     </td>
                                     <td className="role-cell">
                                         {getRoleBadge(user.role)}
+                                        {user.role === 'SCANNER' && user.assigned_gate && (
+                                            <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                                <MapPin className="w-3 h-3" />
+                                                {user.assigned_gate}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="status-cell">
                                         <span className={`user-status ${user.is_active ? 'active' : 'inactive'}`}>
@@ -276,6 +306,7 @@ export default function AdminUsers() {
                                             className="action-btn edit"
                                             onClick={() => {
                                                 setSelectedUser(user);
+                                                setAssignedGate(user.assigned_gate || '');
                                                 setEditModalOpen(true);
                                             }}
                                             title="Edit Role"
@@ -373,6 +404,37 @@ export default function AdminUsers() {
                                     </button>
                                 </div>
                             </div>
+
+                            {(selectedUser.role === 'SCANNER' || (selectedUser.role !== 'SCANNER' && false)) && (
+                                <div className="gate-selector mt-4 pt-4 border-t border-gray-100">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Assign Gate (Scanners Only)
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="w-full p-2 border border-gray-300 rounded-lg"
+                                            value={assignedGate}
+                                            onChange={(e) => setAssignedGate(e.target.value)}
+                                            disabled={selectedUser.role !== 'SCANNER'}
+                                        >
+                                            <option value="">-- Select Gate --</option>
+                                            <option value="Main Entrance">Main Entrance</option>
+                                            <option value="VIP Gate">VIP Gate</option>
+                                            <option value="Backstage">Backstage</option>
+                                            <option value="Parking Entry">Parking Entry</option>
+                                        </select>
+                                        {selectedUser.role === 'SCANNER' && (
+                                            <button
+                                                className="btn-primary py-2 px-3"
+                                                onClick={handleGateChange}
+                                                disabled={saving || !assignedGate}
+                                            >
+                                                Save
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="modal-actions">
                             <button className="btn-secondary" onClick={() => setEditModalOpen(false)}>
