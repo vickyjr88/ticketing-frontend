@@ -233,6 +233,13 @@ class ApiService {
     return this.request(`/tickets/${ticketId}/qr-code`);
   }
 
+  async transferTicket(ticketId, email) {
+    return this.request(`/tickets/${ticketId}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   async checkInTicket(qrHash) {
     return this.request('/tickets/check-in', {
       method: 'POST',

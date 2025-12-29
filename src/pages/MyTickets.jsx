@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Ticket, Calendar, MapPin, QrCode, Download } from 'lucide-react';
+import { Ticket, Calendar, MapPin, QrCode, Download, Send } from 'lucide-react';
 
 export default function MyTickets() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [qrCode, setQrCode] = useState('');
+
+  // Transfer state
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferring, setTransferring] = useState(false);
+  const [transferError, setTransferError] = useState(null);
 
   useEffect(() => {
     loadTickets();
@@ -36,6 +42,34 @@ export default function MyTickets() {
   const closeModal = () => {
     setSelectedTicket(null);
     setQrCode('');
+    setShowTransferModal(false);
+    setTransferEmail('');
+    setTransferError(null);
+  };
+
+  const initiateTransfer = (ticket) => {
+    setSelectedTicket(ticket);
+    setShowTransferModal(true);
+  };
+
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+    if (!transferEmail) return;
+
+    setTransferring(true);
+    setTransferError(null);
+
+    try {
+      await api.transferTicket(selectedTicket.id, transferEmail);
+      alert(`Ticket successfully transferred to ${transferEmail}`);
+      closeModal();
+      loadTickets(); // Refresh list to remove transferred ticket
+    } catch (err) {
+      console.error('Transfer failed:', err);
+      setTransferError(err.message || 'Failed to transfer ticket');
+    } finally {
+      setTransferring(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -136,13 +170,22 @@ export default function MyTickets() {
                 )}
 
                 {(ticket.status === 'ISSUED' || ticket.status === 'WON') && (
-                  <button
-                    onClick={() => handleViewQR(ticket)}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
-                  >
-                    <QrCode className="w-5 h-5" />
-                    View QR Code
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleViewQR(ticket)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      View QR
+                    </button>
+                    <button
+                      onClick={() => initiateTransfer(ticket)}
+                      className="flex-1 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      Transfer
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -150,8 +193,70 @@ export default function MyTickets() {
         </div>
       )}
 
+      {/* Transfer Modal */}
+      {showTransferModal && selectedTicket && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-lg max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Transfer Ticket</h3>
+            <p className="text-gray-600 mb-6">
+              Enter the email address of the person you want to transfer this ticket to.
+              <br />
+              <span className="text-red-600 text-sm font-semibold">
+                Warning: This action cannot be undone.
+              </span>
+            </p>
+
+            <form onSubmit={handleTransfer}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Recipient Email
+                </label>
+                <input
+                  type="email"
+                  value={transferEmail}
+                  onChange={(e) => setTransferEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="friend@example.com"
+                  required
+                />
+              </div>
+
+              {transferError && (
+                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                  {transferError}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  disabled={transferring}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  disabled={transferring}
+                >
+                  {transferring ? 'Transferring...' : 'Confirm Transfer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* QR Code Modal */}
-      {selectedTicket && qrCode && (
+      {selectedTicket && qrCode && !showTransferModal && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
           onClick={closeModal}
