@@ -407,6 +407,31 @@ class ApiService {
   async getActivityFeed(limit = 50) {
     return this.request(`/analytics/activity-feed?limit=${limit}`);
   }
+
+  // Products
+  async getProducts(eventId) {
+    return this.request(`/products?eventId=${eventId}`);
+  }
+
+  async createProduct(productData) {
+    return this.request('/products', {
+      method: 'POST',
+      body: JSON.stringify(productData)
+    });
+  }
+
+  async updateProduct(id, productData) {
+    return this.request(`/products/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(productData)
+    });
+  }
+
+  async deleteProduct(id) {
+    return this.request(`/products/${id}`, {
+      method: 'DELETE'
+    });
+  }
 }
 
 export const api = new ApiService();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { CreditCard, Smartphone, Check, AlertCircle, Tag, X, Loader } from 'lucide-react';
+import { CreditCard, Smartphone, Check, AlertCircle, Tag, X, Loader, Plus, Minus } from 'lucide-react';
 
 export default function Checkout() {
   const location = useLocation();
@@ -22,16 +22,50 @@ export default function Checkout() {
   const [promoError, setPromoError] = useState('');
   const [promoApplied, setPromoApplied] = useState(null); // { code, discount_amount, discount_type, discount_value }
 
+  // Products state
+  const [availableProducts, setAvailableProducts] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState({}); // { productId: quantity }
+
   useEffect(() => {
     if (!eventId || !items) {
       navigate('/events');
+      return;
     }
+
+    // Fetch products
+    api.getProducts(eventId)
+      .then(setAvailableProducts)
+      .catch(err => console.error('Failed to fetch products:', err));
   }, [eventId, items, navigate]);
 
+  const handleProductChange = (productId, change) => {
+    setSelectedProducts(prev => {
+      const current = prev[productId] || 0;
+      const next = Math.max(0, current + change);
+
+      // Check stock
+      const product = availableProducts.find(p => p.id === productId);
+      if (product && next > product.stock) return prev;
+
+      if (next === 0) {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [productId]: next };
+    });
+  };
+
   const calculateSubtotal = () => {
-    return items.reduce((total, item) => {
+    const ticketsTotal = items.reduce((total, item) => {
       return total + (item.price || 0) * item.quantity;
     }, 0);
+
+    const productsTotal = Object.entries(selectedProducts).reduce((total, [pid, qty]) => {
+      const p = availableProducts.find(x => x.id === pid);
+      return total + (Number(p?.price || 0) * qty);
+    }, 0);
+
+    return ticketsTotal + productsTotal;
   };
 
   const calculateTotal = () => {
@@ -91,6 +125,7 @@ export default function Checkout() {
       const orderData = await api.checkout({
         eventId,
         items: items.map(({ tierId, quantity }) => ({ tierId, quantity })),
+        products: Object.entries(selectedProducts).map(([productId, quantity]) => ({ productId, quantity })),
         paymentProvider,
         promoCode: promoApplied?.code || undefined,
       });
@@ -176,92 +211,144 @@ export default function Checkout() {
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Order Summary */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="font-bold text-lg mb-4">{event?.title}</h3>
-
-            <div className="space-y-3 mb-4">
-              {items.map((item, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span className="text-gray-700">
-                    {item.tierName} x {item.quantity}
-                  </span>
-                  <span className="font-semibold">KES {((item.price || 0) * item.quantity).toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Promo Code Section */}
-            <div className="border-t pt-4 mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Tag className="w-4 h-4 inline-block mr-1" />
-                Promo Code
-              </label>
-
-              {promoApplied ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div>
-                    <span className="font-semibold text-green-800">{promoApplied.code}</span>
-                    <span className="text-sm text-green-600 ml-2">
-                      -{promoApplied.discount_type === 'PERCENTAGE'
-                        ? `${promoApplied.discount_value}%`
-                        : `KES ${promoApplied.discount_value}`}
-                    </span>
+        {/* Left Column */}
+        <div className="space-y-8">
+          {availableProducts.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="font-bold text-lg mb-4">Add-Ons</h3>
+              <div className="space-y-4">
+                {availableProducts.map(product => (
+                  <div key={product.id} className="flex justify-between items-center border-b pb-4 last:border-0">
+                    <div className="flex-1">
+                      <p className="font-semibold">{product.name}</p>
+                      <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                      <p className="text-blue-600 font-medium mt-1">KES {Number(product.price).toLocaleString()}</p>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4">
+                      <button
+                        onClick={() => handleProductChange(product.id, -1)}
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 disabled:opacity-50"
+                        disabled={!selectedProducts[product.id]}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="w-8 text-center font-medium">{selectedProducts[product.id] || 0}</span>
+                      <button
+                        onClick={() => handleProductChange(product.id, 1)}
+                        className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 disabled:opacity-50"
+                        disabled={(selectedProducts[product.id] || 0) >= product.stock}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={handleRemovePromo}
-                    className="text-red-500 hover:text-red-700"
-                    title="Remove promo"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    placeholder="Enter code"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <button
-                    onClick={handleApplyPromo}
-                    disabled={promoLoading}
-                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {promoLoading ? <Loader className="w-5 h-5 animate-spin" /> : 'Apply'}
-                  </button>
-                </div>
-              )}
-
-              {promoError && (
-                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {promoError}
-                </p>
-              )}
+                ))}
+              </div>
             </div>
+          )}
 
-            {/* Totals */}
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Subtotal</span>
-                <span>KES {calculateSubtotal().toLocaleString()}</span>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="font-bold text-lg mb-4">{event?.title}</h3>
+
+              <div className="space-y-3 mb-4">
+                {items.map((item, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span className="text-gray-700">
+                      {item.tierName} x {item.quantity}
+                    </span>
+                    <span className="font-semibold">KES {((item.price || 0) * item.quantity).toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
 
-              {promoApplied && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Discount ({promoApplied.code})</span>
-                  <span>-KES {promoApplied.discount_amount.toLocaleString()}</span>
+              {Object.keys(selectedProducts).length > 0 && (
+                <div className="space-y-3 mb-4 pt-4 border-t">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Add-Ons</p>
+                  {Object.entries(selectedProducts).map(([pid, qty]) => {
+                    const p = availableProducts.find(po => po.id === pid);
+                    if (!p) return null;
+                    return (
+                      <div key={pid} className="flex justify-between text-sm">
+                        <span className="text-gray-700">{p.name} x {qty}</span>
+                        <span className="font-semibold">KES {(Number(p.price) * qty).toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
-              <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total</span>
-                <span className="text-blue-600">KES {total.toLocaleString()}</span>
+              {/* Promo Code Section */}
+              <div className="border-t pt-4 mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Tag className="w-4 h-4 inline-block mr-1" />
+                  Promo Code
+                </label>
+
+                {promoApplied ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div>
+                      <span className="font-semibold text-green-800">{promoApplied.code}</span>
+                      <span className="text-sm text-green-600 ml-2">
+                        -{promoApplied.discount_type === 'PERCENTAGE'
+                          ? `${promoApplied.discount_value}%`
+                          : `KES ${promoApplied.discount_value}`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleRemovePromo}
+                      className="text-red-500 hover:text-red-700"
+                      title="Remove promo"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      placeholder="Enter code"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      onClick={handleApplyPromo}
+                      disabled={promoLoading}
+                      className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {promoLoading ? <Loader className="w-5 h-5 animate-spin" /> : 'Apply'}
+                    </button>
+                  </div>
+                )}
+
+                {promoError && (
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {promoError}
+                  </p>
+                )}
+              </div>
+
+              {/* Totals */}
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span>
+                  <span>KES {calculateSubtotal().toLocaleString()}</span>
+                </div>
+
+                {promoApplied && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Discount ({promoApplied.code})</span>
+                    <span>-KES {promoApplied.discount_amount.toLocaleString()}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <span>Total</span>
+                  <span className="text-blue-600">KES {total.toLocaleString()}</span>
+                </div>
               </div>
             </div>
           </div>

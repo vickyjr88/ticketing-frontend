@@ -15,7 +15,8 @@ import {
     Edit,
     AlertCircle,
     Check,
-    Loader
+    Loader,
+    ShoppingBag
 } from 'lucide-react';
 import { api } from '../../services/api';
 import ImagePicker from '../../components/ImagePicker';
@@ -46,6 +47,20 @@ export default function AdminEventForm() {
 
     const [editingTierId, setEditingTierId] = useState(null);
     const [tierToDelete, setTierToDelete] = useState(null);
+
+    // Products State
+    const [products, setProducts] = useState([]);
+    const [showProductForm, setShowProductForm] = useState(false);
+    const [editingProductId, setEditingProductId] = useState(null);
+    const [newProduct, setNewProduct] = useState({
+        name: '',
+        description: '',
+        price: '',
+        stock: '',
+        imageUrl: '',
+        type: 'OTHER',
+        active: true
+    });
 
     const [ticketTiers, setTicketTiers] = useState([]);
     const [showTierForm, setShowTierForm] = useState(false);
@@ -103,6 +118,10 @@ export default function AdminEventForm() {
 
             if (event.ticket_tiers) {
                 setTicketTiers(event.ticket_tiers);
+            }
+
+            if (event.products) {
+                setProducts(event.products);
             }
         } catch (err) {
             console.error('Failed to load event:', err);
@@ -283,6 +302,78 @@ export default function AdminEventForm() {
             currency: 'KES',
             minimumFractionDigits: 0
         }).format(amount || 0);
+    };
+
+    // Product Handlers
+    const handleProductChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setNewProduct(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleEditProduct = (product) => {
+        setNewProduct({
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            stock: product.stock,
+            imageUrl: product.image_url || '',
+            type: product.type,
+            active: product.active
+        });
+        setEditingProductId(product.id);
+        setShowProductForm(true);
+    };
+
+    const handleSaveProduct = async () => {
+        if (!id) {
+            setError('Please save the event first before adding products.');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            const payload = {
+                eventId: id,
+                ...newProduct,
+                price: parseFloat(newProduct.price),
+                stock: parseInt(newProduct.stock)
+            };
+
+            if (editingProductId) {
+                await api.updateProduct(editingProductId, payload);
+                setSuccess('Product updated successfully');
+            } else {
+                await api.createProduct(payload);
+                setSuccess('Product added successfully');
+            }
+
+            // Reload products
+            const updatedEvent = await api.getEvent(id);
+            setProducts(updatedEvent.products || []);
+            setShowProductForm(false);
+            setEditingProductId(null);
+            setNewProduct({
+                name: '', description: '', price: '', stock: '', imageUrl: '', type: 'OTHER', active: true
+            });
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDeleteProduct = async (productId) => {
+        if (!window.confirm('Are you sure you want to delete this product?')) return;
+        try {
+            await api.deleteProduct(productId);
+            setProducts(prev => prev.filter(p => p.id !== productId));
+            setSuccess('Product deleted successfully');
+        } catch (err) {
+            setError(err.message);
+        }
     };
 
     // ... existing formatCurrency ...
@@ -668,6 +759,102 @@ export default function AdminEventForm() {
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+                {/* ADD-ONS SECTION */}
+                {isEditing && (
+                    <div className="admin-card products-section" style={{ marginTop: '20px' }}>
+                        <div className="card-header">
+                            <h2>
+                                <ShoppingBag className="w-5 h-5" />
+                                Products & Add-Ons
+                            </h2>
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => {
+                                    setEditingProductId(null);
+                                    setNewProduct({
+                                        name: '', description: '', price: '', stock: '', imageUrl: '', type: 'OTHER', active: true
+                                    });
+                                    setShowProductForm(!showProductForm);
+                                }}
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Product
+                            </button>
+                        </div>
+
+                        {showProductForm && (
+                            <div className="tier-form">
+                                <h3>{editingProductId ? 'Edit Product' : 'New Product'}</h3>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Name *</label>
+                                        <input type="text" name="name" value={newProduct.name} onChange={handleProductChange} placeholder="e.g. T-Shirt" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Type</label>
+                                        <select name="type" value={newProduct.type} onChange={handleProductChange}>
+                                            <option value="MERCH">Merch</option>
+                                            <option value="PARKING">Parking</option>
+                                            <option value="BEVERAGE">Beverage</option>
+                                            <option value="SNACK">Snack</option>
+                                            <option value="OTHER">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Description</label>
+                                    <textarea name="description" value={newProduct.description} onChange={handleProductChange} rows="2" />
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Price (KES) *</label>
+                                        <input type="number" name="price" value={newProduct.price} onChange={handleProductChange} min="0" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Stock *</label>
+                                        <input type="number" name="stock" value={newProduct.stock} onChange={handleProductChange} min="0" />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Image URL</label>
+                                    <input type="text" name="imageUrl" value={newProduct.imageUrl} onChange={handleProductChange} placeholder="http://..." />
+                                </div>
+                                <div className="tier-form-actions">
+                                    <button type="button" className="btn-secondary" onClick={() => setShowProductForm(false)}>Cancel</button>
+                                    <button type="button" className="btn-primary" onClick={handleSaveProduct} disabled={saving}>
+                                        {saving ? 'Saving...' : 'Save Product'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="tiers-list">
+                            {products.length === 0 ? (
+                                <div className="empty-state">
+                                    <ShoppingBag className="w-10 h-10" />
+                                    <p>No products yet</p>
+                                </div>
+                            ) : (
+                                products.map((product) => (
+                                    <div key={product.id} className="tier-item">
+                                        <div className="tier-info">
+                                            <span className="tier-category" style={{ background: '#f3f4f6', color: '#374151' }}>{product.type}</span>
+                                            <h4>{product.name}</h4>
+                                            <p>{formatCurrency(product.price)} | Stock: {product.stock}</p>
+                                        </div>
+                                        <div className="tier-stats-actions">
+                                            <div className="row-actions">
+                                                <button onClick={() => handleEditProduct(product)} className="action-btn edit"><Edit className="w-4 h-4" /></button>
+                                                <button onClick={() => handleDeleteProduct(product.id)} className="action-btn delete"><Trash2 className="w-4 h-4" /></button>
                                             </div>
                                         </div>
                                     </div>
