@@ -16,7 +16,6 @@ import {
     MoreVertical,
     AlertCircle,
     CheckCircle,
-    CheckCircle,
     XCircle,
     Bell
 } from 'lucide-react';
