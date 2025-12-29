@@ -175,12 +175,18 @@ class ApiService {
   }
 
   async getAdminOrders(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
+    const cleanedParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null && v !== 'undefined')
+    );
+    const queryString = new URLSearchParams(cleanedParams).toString();
     return this.request(`/admin/orders?${queryString}`);
   }
 
   async getAdminUsers(params = {}) {
-    const queryString = new URLSearchParams(params).toString();
+    const cleanedParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v != null && v !== 'undefined')
+    );
+    const queryString = new URLSearchParams(cleanedParams).toString();
     return this.request(`/admin/users?${queryString}`);
   }
 
