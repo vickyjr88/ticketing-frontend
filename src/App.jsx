@@ -10,6 +10,7 @@ import MyTickets from './pages/MyTickets';
 import PaystackCallback from './pages/PaystackCallback';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Adopt from './pages/Adopt';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -208,6 +209,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Checkout />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/adopt"
+                    element={
+                      <ProtectedRoute>
+                        <Adopt />
                       </ProtectedRoute>
                     }
                   />
