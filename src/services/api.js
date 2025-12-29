@@ -355,6 +355,30 @@ class ApiService {
       body: JSON.stringify({ code, eventId, subtotal }),
     });
   }
+
+  // Analytics
+  async getAnalyticsDashboard(days = 30, eventId = null) {
+    const params = new URLSearchParams();
+    if (days) params.append('days', days);
+    if (eventId) params.append('eventId', eventId);
+    return this.request(`/analytics/dashboard?${params}`);
+  }
+
+  async getSalesTimeSeries(days = 30, eventId = null) {
+    const params = new URLSearchParams();
+    if (days) params.append('days', days);
+    if (eventId) params.append('eventId', eventId);
+    return this.request(`/analytics/sales-timeseries?${params}`);
+  }
+
+  async getCheckInDistribution(eventId = null) {
+    const query = eventId ? `?eventId=${eventId}` : '';
+    return this.request(`/analytics/checkin-distribution${query}`);
+  }
+
+  async getActivityFeed(limit = 50) {
+    return this.request(`/analytics/activity-feed?limit=${limit}`);
+  }
 }
 
 export const api = new ApiService();

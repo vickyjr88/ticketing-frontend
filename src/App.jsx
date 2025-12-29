@@ -22,6 +22,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminScanner from './pages/admin/AdminScanner';
 import AdminLottery from './pages/admin/AdminLottery';
 import AdminPromoCodes from './pages/admin/AdminPromoCodes';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // User Dashboard Pages
 import UserLayout from './pages/admin/UserLayout';
@@ -176,6 +177,7 @@ function App() {
             <Route path="scanner" element={<AdminScanner />} />
             <Route path="lottery" element={<AdminLottery />} />
             <Route path="promo-codes" element={<AdminPromoCodes />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
           </Route>
 
           {/* User Dashboard Routes */}

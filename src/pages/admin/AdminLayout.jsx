@@ -14,7 +14,8 @@ import {
     ChevronLeft,
     Ticket,
     Home,
-    Tag
+    Tag,
+    BarChart3
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -31,6 +32,7 @@ export default function AdminLayout() {
 
     const navItems = [
         { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true, roles: ['ADMIN', 'SCANNER', 'USER'] },
+        { to: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['ADMIN'] },
         { to: '/admin/events', icon: Calendar, label: 'Events', roles: ['ADMIN', 'USER'] },
         { to: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['ADMIN'] },
         { to: '/admin/users', icon: Users, label: 'Users', roles: ['ADMIN'] },
