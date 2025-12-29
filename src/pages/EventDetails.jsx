@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MapPin, Clock, Users, Gift, ShoppingCart } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Gift, ShoppingCart, Bell } from 'lucide-react';
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -16,6 +16,10 @@ export default function EventDetails() {
   const [lotteryStats, setLotteryStats] = useState(null);
   const [isEligible, setIsEligible] = useState(true);
   const [enteringLottery, setEnteringLottery] = useState(false);
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  const [waitlistTier, setWaitlistTier] = useState(null);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [joiningWaitlist, setJoiningWaitlist] = useState(false);
 
   useEffect(() => {
     loadEventData();
@@ -136,6 +140,34 @@ export default function EventDetails() {
       alert(error.message || 'Failed to enter lottery');
     } finally {
       setEnteringLottery(false);
+    }
+  };
+
+  const openWaitlistModal = (tier) => {
+    setWaitlistTier(tier);
+    setShowWaitlistModal(true);
+  };
+
+  const handleJoinWaitlist = async (e) => {
+    e.preventDefault();
+    if (!waitlistEmail || !waitlistTier) return;
+
+    setJoiningWaitlist(true);
+    try {
+      await api.joinWaitlist({
+        eventId: event.id,
+        tierId: waitlistTier.id,
+        email: waitlistEmail,
+      });
+      alert('You have been added to the waitlist! We will notify you if tickets become available.');
+      setShowWaitlistModal(false);
+      setWaitlistEmail('');
+      setWaitlistTier(null);
+    } catch (error) {
+      console.error('Failed to join waitlist:', error);
+      alert(error.message || 'Failed to join waitlist');
+    } finally {
+      setJoiningWaitlist(false);
     }
   };
 
@@ -353,9 +385,19 @@ export default function EventDetails() {
                           )}
                         </>
                       ) : (
-                        <button disabled className="flex-1 bg-gray-300 text-gray-600 py-2 px-4 rounded-lg cursor-not-allowed">
-                          Not Available
-                        </button>
+                        tier.remaining_quantity === 0 ? (
+                          <button
+                            onClick={() => openWaitlistModal(tier)}
+                            className="flex-1 bg-gray-800 text-white py-2 px-4 rounded-lg hover:bg-gray-900 flex items-center justify-center gap-2"
+                          >
+                            <Bell className="w-4 h-4" />
+                            Join Waitlist
+                          </button>
+                        ) : (
+                          <button disabled className="flex-1 bg-gray-300 text-gray-600 py-2 px-4 rounded-lg cursor-not-allowed">
+                            Not Available
+                          </button>
+                        )
                       )}
                     </div>
                   </div>
@@ -388,6 +430,61 @@ export default function EventDetails() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Waitlist Modal */}
+      {
+        showWaitlistModal && waitlistTier && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Join Waitlist</h3>
+                <button
+                  onClick={() => setShowWaitlistModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Get notified when more tickets for <strong>{waitlistTier.name}</strong> become available.
+              </p>
+
+              <form onSubmit={handleJoinWaitlist}>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={waitlistEmail}
+                    onChange={(e) => setWaitlistEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="you@example.com"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowWaitlistModal(false)}
+                    className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={joiningWaitlist}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {joiningWaitlist ? 'Joining...' : 'Notify Me'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 }

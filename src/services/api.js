@@ -287,6 +287,18 @@ class ApiService {
     });
   }
 
+  // Waitlist
+  async joinWaitlist(waitlistData) {
+    return this.request('/waitlist', {
+      method: 'POST',
+      body: JSON.stringify(waitlistData),
+    });
+  }
+
+  async getEventWaitlist(eventId) {
+    return this.request(`/waitlist/event/${eventId}`);
+  }
+
   // Users
   async getProfile() {
     return this.request('/users/me');
