@@ -13,7 +13,8 @@ import {
     X,
     ChevronLeft,
     Ticket,
-    Home
+    Home,
+    Tag
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -34,6 +35,7 @@ export default function AdminLayout() {
         { to: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['ADMIN'] },
         { to: '/admin/users', icon: Users, label: 'Users', roles: ['ADMIN'] },
         { to: '/admin/lottery', icon: Gift, label: 'Lottery', roles: ['ADMIN'] },
+        { to: '/admin/promo-codes', icon: Tag, label: 'Promo Codes', roles: ['ADMIN'] },
         { to: '/admin/scanner', icon: Scan, label: 'Scanner', roles: ['ADMIN', 'SCANNER'] },
     ];
 

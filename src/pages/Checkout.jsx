@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { CreditCard, Smartphone, Check, AlertCircle } from 'lucide-react';
+import { CreditCard, Smartphone, Check, AlertCircle, Tag, X, Loader } from 'lucide-react';
 
 export default function Checkout() {
   const location = useLocation();
@@ -16,16 +16,70 @@ export default function Checkout() {
   const [order, setOrder] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, failed
 
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [promoApplied, setPromoApplied] = useState(null); // { code, discount_amount, discount_type, discount_value }
+
   useEffect(() => {
     if (!eventId || !items) {
       navigate('/events');
     }
   }, [eventId, items, navigate]);
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return items.reduce((total, item) => {
       return total + (item.price || 0) * item.quantity;
     }, 0);
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    if (promoApplied?.discount_amount) {
+      return subtotal - promoApplied.discount_amount;
+    }
+    return subtotal;
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Please enter a promo code');
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError('');
+
+    try {
+      const subtotal = calculateSubtotal();
+      const result = await api.validatePromoCode(promoCode.trim(), eventId, subtotal);
+
+      if (result.valid) {
+        setPromoApplied({
+          code: result.code,
+          discount_amount: result.discount_amount,
+          discount_type: result.discount_type,
+          discount_value: result.discount_value,
+          description: result.description,
+        });
+        setPromoError('');
+      } else {
+        setPromoError(result.error || 'Invalid promo code');
+        setPromoApplied(null);
+      }
+    } catch (err) {
+      setPromoError(err.message || 'Failed to validate promo code');
+      setPromoApplied(null);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoApplied(null);
+    setPromoCode('');
+    setPromoError('');
   };
 
   const handleCheckout = async () => {
@@ -33,11 +87,12 @@ export default function Checkout() {
     setError('');
 
     try {
-      // Create order
+      // Create order with optional promo code
       const orderData = await api.checkout({
         eventId,
         items: items.map(({ tierId, quantity }) => ({ tierId, quantity })),
         paymentProvider,
+        promoCode: promoApplied?.code || undefined,
       });
 
       setOrder(orderData.order);
@@ -138,8 +193,73 @@ export default function Checkout() {
               ))}
             </div>
 
-            <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-bold">
+            {/* Promo Code Section */}
+            <div className="border-t pt-4 mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Tag className="w-4 h-4 inline-block mr-1" />
+                Promo Code
+              </label>
+
+              {promoApplied ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div>
+                    <span className="font-semibold text-green-800">{promoApplied.code}</span>
+                    <span className="text-sm text-green-600 ml-2">
+                      -{promoApplied.discount_type === 'PERCENTAGE'
+                        ? `${promoApplied.discount_value}%`
+                        : `KES ${promoApplied.discount_value}`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleRemovePromo}
+                    className="text-red-500 hover:text-red-700"
+                    title="Remove promo"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Enter code"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <button
+                    onClick={handleApplyPromo}
+                    disabled={promoLoading}
+                    className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {promoLoading ? <Loader className="w-5 h-5 animate-spin" /> : 'Apply'}
+                  </button>
+                </div>
+              )}
+
+              {promoError && (
+                <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {promoError}
+                </p>
+              )}
+            </div>
+
+            {/* Totals */}
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subtotal</span>
+                <span>KES {calculateSubtotal().toLocaleString()}</span>
+              </div>
+
+              {promoApplied && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount ({promoApplied.code})</span>
+                  <span>-KES {promoApplied.discount_amount.toLocaleString()}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-lg font-bold pt-2 border-t">
                 <span>Total</span>
                 <span className="text-blue-600">KES {total.toLocaleString()}</span>
               </div>

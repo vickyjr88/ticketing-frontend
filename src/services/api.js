@@ -314,6 +314,47 @@ class ApiService {
   async getProfile() {
     return this.request('/users/me');
   }
+
+  // Promo Codes
+  async getPromoCodes(includeInactive = false) {
+    const query = includeInactive ? '?includeInactive=true' : '';
+    return this.request(`/promo${query}`);
+  }
+
+  async getPromoCode(id) {
+    return this.request(`/promo/${id}`);
+  }
+
+  async getPromoCodeStats(id) {
+    return this.request(`/promo/${id}/stats`);
+  }
+
+  async createPromoCode(promoData) {
+    return this.request('/promo', {
+      method: 'POST',
+      body: JSON.stringify(promoData),
+    });
+  }
+
+  async updatePromoCode(id, promoData) {
+    return this.request(`/promo/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(promoData),
+    });
+  }
+
+  async deletePromoCode(id) {
+    return this.request(`/promo/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async validatePromoCode(code, eventId, subtotal) {
+    return this.request('/promo/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code, eventId, subtotal }),
+    });
+  }
 }
 
 export const api = new ApiService();
