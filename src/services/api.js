@@ -273,6 +273,13 @@ class ApiService {
     return this.request(`/lottery/eligible/${eventId}`);
   }
 
+  async allocateTicket(eventId, email) {
+    return this.request(`/lottery/allocate/${eventId}`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   // Users
   async getProfile() {
     return this.request('/users/me');

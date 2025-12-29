@@ -25,6 +25,11 @@ export default function AdminLottery() {
     const [running, setRunning] = useState(false);
     const [drawResult, setDrawResult] = useState(null);
 
+    // Manual Allocation State
+    const [allocationEmail, setAllocationEmail] = useState('');
+    const [allocating, setAllocating] = useState(false);
+    const [allocationMessage, setAllocationMessage] = useState(null);
+
     useEffect(() => {
         loadEvents();
     }, []);
@@ -89,6 +94,28 @@ export default function AdminLottery() {
             });
         } finally {
             setRunning(false);
+        }
+    };
+
+    const handleManualAllocation = async () => {
+        if (!selectedEvent || !allocationEmail) return;
+
+        try {
+            setAllocating(true);
+            setAllocationMessage(null);
+
+            await api.allocateTicket(selectedEvent.id, allocationEmail);
+
+            setAllocationMessage({ type: 'success', text: `Successfully allocated ticket to ${allocationEmail}` });
+            setAllocationEmail('');
+
+            // Reload data
+            await loadEventLotteryData(selectedEvent);
+        } catch (err) {
+            console.error('Allocation failed:', err);
+            setAllocationMessage({ type: 'error', text: err.message || 'Allocation failed' });
+        } finally {
+            setAllocating(false);
         }
     };
 
@@ -266,6 +293,49 @@ export default function AdminLottery() {
                                         </>
                                     )}
                                 </button>
+                            </div>
+
+                            {/* Manual Allocation */}
+                            <div className="admin-card lottery-action-card" style={{ marginTop: '20px' }}>
+                                <div className="action-header">
+                                    <h3>
+                                        <Gift className="w-5 h-5" />
+                                        Manual Allocation (Social Media Winners)
+                                    </h3>
+                                </div>
+                                <p className="action-description">
+                                    Manually allocate a ticket to a specific user. This will select a ticket from the pool and assign it to them immediately.
+                                </p>
+                                <div className="allocation-form" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '16px' }}>
+                                    <input
+                                        type="email"
+                                        placeholder="User Email Address"
+                                        value={allocationEmail}
+                                        onChange={(e) => setAllocationEmail(e.target.value)}
+                                        className="form-input"
+                                        style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}
+                                    />
+                                    <button
+                                        className="btn-secondary"
+                                        onClick={handleManualAllocation}
+                                        disabled={allocating || !allocationEmail}
+                                    >
+                                        {allocating ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                                Allocating...
+                                            </>
+                                        ) : (
+                                            'Allocate Ticket'
+                                        )}
+                                    </button>
+                                </div>
+                                {allocationMessage && (
+                                    <div className={`draw-result ${allocationMessage.type === 'success' ? 'success' : 'error'}`} style={{ marginTop: '10px' }}>
+                                        {allocationMessage.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                                        <span>{allocationMessage.text}</span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Winners List */}
