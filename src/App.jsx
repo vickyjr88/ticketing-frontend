@@ -11,6 +11,9 @@ import PaystackCallback from './pages/PaystackCallback';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Adopt from './pages/Adopt';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Profile from './pages/Profile';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -99,12 +102,12 @@ function Layout({ children }) {
                     My Tickets
                   </Link>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
+                    <Link to="/profile" className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                       <User className="w-4 h-4 text-gray-600" />
                       <span className="text-sm font-medium text-gray-700">
                         {user?.first_name || user?.email}
                       </span>
-                    </div>
+                    </Link>
                     <button
                       onClick={logout}
                       className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-red-600 font-medium"
@@ -206,6 +209,9 @@ function App() {
                   <Route path="/events/:id" element={<EventDetails />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/auth/reset-password" element={<ResetPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
                   {/* Protected Routes */}
                   <Route
@@ -237,6 +243,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <MyTickets />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
                       </ProtectedRoute>
                     }
                   />

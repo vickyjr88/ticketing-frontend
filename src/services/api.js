@@ -48,6 +48,27 @@ class ApiService {
     });
   }
 
+  async forgotPassword(email) {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token, newPassword) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  async changePassword(currentPassword, newPassword) {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
   // Events
   async getEvents(status) {
     const query = status ? `?status=${status}` : '';
@@ -313,6 +334,13 @@ class ApiService {
   // Users
   async getProfile() {
     return this.request('/users/me');
+  }
+
+  async updateProfile(profileData) {
+    return this.request('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
   }
 
   // Promo Codes
