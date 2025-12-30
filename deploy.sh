@@ -8,7 +8,7 @@ echo "🚀 Deploying Web Ticketing Frontend..."
 # Configuration
 ECR_REGISTRY="767398109480.dkr.ecr.us-east-1.amazonaws.com"
 ECR_REPOSITORY="vdm-agency-ticketing-frontend"
-API_URL="http://3.225.246.72:4001/api"
+API_URL="https://3.225.246.72:4001/api"
 EC2_HOST="3.225.246.72"
 SSH_KEY="/Users/vickyjunior/projects/vdm/digital_agency/infrastructure/agency_keyb.pem"
 
