@@ -219,10 +219,20 @@ export default function Checkout() {
               <div className="space-y-4">
                 {availableProducts.map(product => (
                   <div key={product.id} className="flex justify-between items-center border-b pb-4 last:border-0">
-                    <div className="flex-1">
-                      <p className="font-semibold">{product.name}</p>
-                      <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
-                      <p className="text-blue-600 font-medium mt-1">KES {Number(product.price).toLocaleString()}</p>
+                    <div className="flex items-start gap-4 flex-1">
+                      {product.image_url && (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-16 h-16 rounded object-cover bg-gray-100 flex-shrink-0"
+                        />
+                      )}
+
+                      <div className="flex-1">
+                        <p className="font-semibold">{product.name}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                        <p className="text-blue-600 font-medium mt-1">KES {Number(product.price).toLocaleString()}</p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 ml-4">
                       <button

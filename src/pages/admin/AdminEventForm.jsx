@@ -846,6 +846,15 @@ export default function AdminEventForm() {
                             ) : (
                                 products.map((product) => (
                                     <div key={product.id} className="tier-item">
+                                        {product.image_url && (
+                                            <div style={{ marginRight: '15px' }}>
+                                                <img
+                                                    src={product.image_url}
+                                                    alt={product.name}
+                                                    style={{ width: '50px', height: '50px', borderRadius: '6px', objectFit: 'cover' }}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="tier-info">
                                             <span className="tier-category" style={{ background: '#f3f4f6', color: '#374151' }}>{product.type}</span>
                                             <h4>{product.name}</h4>
