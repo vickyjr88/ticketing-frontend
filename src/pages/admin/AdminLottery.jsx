@@ -37,9 +37,14 @@ export default function AdminLottery() {
     const loadEvents = async () => {
         try {
             setLoading(true);
-            const data = await api.getEvents();
+            // Load all events (we might want to paginate this later, but for now fetch all or a large page)
+            const response = await api.getEvents();
+            const allEvents = response.data || response;
+
             // Filter events with lottery enabled
-            const lotteryEvents = data.filter(e => e.lottery_enabled);
+            const lotteryEvents = Array.isArray(allEvents)
+                ? allEvents.filter(e => e.lottery_enabled)
+                : [];
             setEvents(lotteryEvents);
         } catch (err) {
             console.error('Failed to load events:', err);
