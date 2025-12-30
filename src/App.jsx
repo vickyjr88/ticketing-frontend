@@ -201,65 +201,61 @@ function App() {
           </Route>
 
           {/* Public & User Routes */}
-          <Route
-            path="*"
-            element={
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/events" />} />
-                  <Route path="/events" element={<Events />} />
-                  <Route path="/events/:id" element={<EventDetails />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/auth/reset-password" element={<ResetPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
+          <Route element={<Layout><Outlet /></Layout>}>
+            <Route path="/" element={<Navigate to="/events" replace />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-                  {/* Protected Routes */}
-                  <Route
-                    path="/checkout"
-                    element={
-                      <ProtectedRoute>
-                        <Checkout />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/adopt"
-                    element={
-                      <ProtectedRoute>
-                        <Adopt />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/paystack/callback"
-                    element={
-                      <ProtectedRoute>
-                        <PaystackCallback />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/my-tickets"
-                    element={
-                      <ProtectedRoute>
-                        <MyTickets />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </Layout>
-            }
-          />
+            {/* Protected Routes */}
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adopt"
+              element={
+                <ProtectedRoute>
+                  <Adopt />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/paystack/callback"
+              element={
+                <ProtectedRoute>
+                  <PaystackCallback />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-tickets"
+              element={
+                <ProtectedRoute>
+                  <MyTickets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch all - redirect to events */}
+            <Route path="*" element={<Navigate to="/events" replace />} />
+          </Route>
         </Routes>
       </Router>
     </AuthProvider>
