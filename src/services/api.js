@@ -377,10 +377,10 @@ class ApiService {
     });
   }
 
-  async validatePromoCode(code, eventId, subtotal) {
+  async validatePromoCode(code, eventId, subtotal, productIds = []) {
     return this.request('/promo/validate', {
       method: 'POST',
-      body: JSON.stringify({ code, eventId, subtotal }),
+      body: JSON.stringify({ code, eventId, subtotal, productIds }),
     });
   }
 

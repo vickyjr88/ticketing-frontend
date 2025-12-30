@@ -87,7 +87,12 @@ export default function Checkout() {
 
     try {
       const subtotal = calculateSubtotal();
-      const result = await api.validatePromoCode(promoCode.trim(), eventId, subtotal);
+      const result = await api.validatePromoCode(
+        promoCode.trim(),
+        eventId,
+        subtotal,
+        Object.keys(selectedProducts)
+      );
 
       if (result.valid) {
         setPromoApplied({
