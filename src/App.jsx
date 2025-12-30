@@ -4,6 +4,7 @@ import { Ticket, LogOut, User } from 'lucide-react';
 
 // Pages
 import Events from './pages/Events';
+import Products from './pages/Products';
 import EventDetails from './pages/EventDetails';
 import Checkout from './pages/Checkout';
 import MyTickets from './pages/MyTickets';
@@ -89,6 +90,9 @@ function Layout({ children }) {
             <div className="flex items-center gap-4">
               <Link to="/events" className="text-gray-700 hover:text-blue-600 font-medium">
                 Events
+              </Link>
+              <Link to="/products" className="text-gray-700 hover:text-blue-600 font-medium">
+                Shop
               </Link>
 
               {(isAdmin || user?.role === 'USER') && (
@@ -204,6 +208,7 @@ function App() {
           <Route element={<Layout><Outlet /></Layout>}>
             <Route path="/" element={<Navigate to="/events" replace />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/products" element={<Products />} />
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

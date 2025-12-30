@@ -410,7 +410,8 @@ class ApiService {
 
   // Products
   async getProducts(eventId) {
-    return this.request(`/products?eventId=${eventId}`);
+    const query = eventId ? `?eventId=${eventId}` : '';
+    return this.request(`/products${query}`);
   }
 
   async createProduct(productData) {

@@ -7,7 +7,7 @@ export default function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { eventId, items, event } = location.state || {};
+  const { eventId, items = [], event, products: initialProducts = {} } = location.state || {};
 
   const [paymentProvider, setPaymentProvider] = useState('MPESA');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -24,10 +24,10 @@ export default function Checkout() {
 
   // Products state
   const [availableProducts, setAvailableProducts] = useState([]);
-  const [selectedProducts, setSelectedProducts] = useState({}); // { productId: quantity }
+  const [selectedProducts, setSelectedProducts] = useState(initialProducts); // { productId: quantity }
 
   useEffect(() => {
-    if (!eventId || !items) {
+    if (!eventId || (items.length === 0 && Object.keys(initialProducts).length === 0)) {
       navigate('/events');
       return;
     }
@@ -200,7 +200,7 @@ export default function Checkout() {
     }, 1000);
   };
 
-  if (!eventId || !items) {
+  if (!eventId || (items.length === 0 && Object.keys(initialProducts).length === 0)) {
     return null;
   }
 
