@@ -15,7 +15,8 @@ import {
     Ticket,
     Home,
     Tag,
-    BarChart3
+    BarChart3,
+    Image
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,6 +36,7 @@ export default function AdminLayout() {
         { to: '/admin/analytics', icon: BarChart3, label: 'Analytics', roles: ['ADMIN'] },
         { to: '/admin/events', icon: Calendar, label: 'Events', roles: ['ADMIN', 'USER'] },
         { to: '/admin/orders', icon: ShoppingCart, label: 'Orders', roles: ['ADMIN'] },
+        { to: '/admin/media', icon: Image, label: 'Media Library', roles: ['ADMIN'] },
         { to: '/admin/users', icon: Users, label: 'Users', roles: ['ADMIN'] },
         { to: '/admin/lottery', icon: Gift, label: 'Lottery', roles: ['ADMIN'] },
         { to: '/admin/promo-codes', icon: Tag, label: 'Promo Codes', roles: ['ADMIN'] },

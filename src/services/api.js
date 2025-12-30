@@ -432,6 +432,37 @@ class ApiService {
       method: 'DELETE'
     });
   }
+  // Media Library
+  async getMedia() {
+    return this.request('/media');
+  }
+
+  async uploadMedia(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${this.baseURL}/media`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to upload media');
+    }
+
+    return response.json();
+  }
+
+  async deleteMedia(id) {
+    return this.request(`/media/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiService();
