@@ -38,7 +38,7 @@ jobs:
       id: build-image
       env:
         IMAGE_TAG: latest
-        VITE_API_URL: https://3.225.246.72:4001/api
+        VITE_API_URL: https://3.225.246.72/api
       run: |
         # Build for linux/amd64 to match EC2 instance architecture
         docker build --platform linux/amd64 --build-arg VITE_API_URL=$VITE_API_URL -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
