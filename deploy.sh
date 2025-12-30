@@ -48,5 +48,5 @@ ssh -i $SSH_KEY ubuntu@$EC2_HOST << 'EOF'
 EOF
 
 echo "✅ Deployment complete!"
-echo "🌐 Frontend available at: http://$EC2_HOST:3000"
-echo "📚 API docs at: http://$EC2_HOST:4001/api/docs"
+echo "🌐 Frontend available at: https://$EC2_HOST:3000"
+echo "📚 API docs at: https://$EC2_HOST:4001/api/docs"
