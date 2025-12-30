@@ -18,6 +18,7 @@ import {
     X,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import Pagination from '../../components/Pagination';
 
 export default function AdminPromoCodes() {
     const [promoCodes, setPromoCodes] = useState([]);
@@ -60,6 +61,11 @@ export default function AdminPromoCodes() {
     const [showProductDropdown, setShowProductDropdown] = useState(false);
     const dropdownRef = useRef(null);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [paginationMeta, setPaginationMeta] = useState(null);
+    const ITEMS_PER_PAGE = 20;
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -72,7 +78,7 @@ export default function AdminPromoCodes() {
     }, []);
 
     useEffect(() => {
-        loadPromoCodes();
+        loadPromoCodes(1);
         loadEventsAndProducts();
     }, [showInactive]);
 
@@ -89,17 +95,26 @@ export default function AdminPromoCodes() {
         }
     };
 
-    const loadPromoCodes = async () => {
+    const loadPromoCodes = async (page = 1) => {
         try {
             setLoading(true);
-            const data = await api.getPromoCodes(showInactive);
-            setPromoCodes(data);
+            setCurrentPage(page);
+            const response = await api.getPromoCodes(showInactive, page, ITEMS_PER_PAGE);
+            const data = response.data || response;
+            setPromoCodes(Array.isArray(data) ? data : []);
+            if (response.meta) {
+                setPaginationMeta(response.meta);
+            }
         } catch (err) {
             console.error('Failed to load promo codes:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        loadPromoCodes(page);
     };
 
     const handleCreate = async (e) => {
@@ -417,6 +432,19 @@ export default function AdminPromoCodes() {
                     </table>
                 </div>
             </div>
+
+            {/* Pagination */}
+            {paginationMeta && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={paginationMeta.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNextPage={paginationMeta.hasNextPage}
+                    hasPrevPage={paginationMeta.hasPrevPage}
+                    total={paginationMeta.total}
+                    limit={ITEMS_PER_PAGE}
+                />
+            )}
 
             {/* Create/Edit Modal */}
             {(showCreateModal || showEditModal) && (

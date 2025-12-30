@@ -70,9 +70,10 @@ class ApiService {
   }
 
   // Events
-  async getEvents(status) {
-    const query = status ? `?status=${status}` : '';
-    return this.request(`/events${query}`);
+  async getEvents(status, page = 1, limit = 20) {
+    const params = new URLSearchParams({ page, limit });
+    if (status) params.append('status', status);
+    return this.request(`/events?${params}`);
   }
 
   async getEvent(id) {
@@ -88,8 +89,9 @@ class ApiService {
   }
 
   // Admin methods
-  async getAllEventsAdmin() {
-    return this.request('/events/admin/all');
+  async getAllEventsAdmin(page = 1, limit = 20) {
+    const params = new URLSearchParams({ page, limit });
+    return this.request(`/events/admin/all?${params}`);
   }
 
   async updateEventStatus(eventId, status) {
@@ -344,9 +346,10 @@ class ApiService {
   }
 
   // Promo Codes
-  async getPromoCodes(includeInactive = false) {
-    const query = includeInactive ? '?includeInactive=true' : '';
-    return this.request(`/promo${query}`);
+  async getPromoCodes(includeInactive = false, page = 1, limit = 20) {
+    const params = new URLSearchParams({ page, limit });
+    if (includeInactive) params.append('includeInactive', 'true');
+    return this.request(`/promo?${params}`);
   }
 
   async getPromoCode(id) {
@@ -409,9 +412,10 @@ class ApiService {
   }
 
   // Products
-  async getProducts(eventId) {
-    const query = eventId ? `?eventId=${eventId}` : '';
-    return this.request(`/products${query}`);
+  async getProducts(eventId, page = 1, limit = 24) {
+    const params = new URLSearchParams({ page, limit });
+    if (eventId) params.append('eventId', eventId);
+    return this.request(`/products?${params}`);
   }
 
   async createProduct(productData) {
@@ -434,8 +438,9 @@ class ApiService {
     });
   }
   // Media Library
-  async getMedia() {
-    return this.request('/media');
+  async getMedia(page = 1, limit = 24) {
+    const params = new URLSearchParams({ page, limit });
+    return this.request(`/media?${params}`);
   }
 
   async uploadMedia(file) {

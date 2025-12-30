@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import Pagination from '../../components/Pagination';
 
 export default function AdminMediaLibrary() {
     const navigate = useNavigate();
@@ -23,20 +24,34 @@ export default function AdminMediaLibrary() {
     const [success, setSuccess] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [paginationMeta, setPaginationMeta] = useState(null);
+    const ITEMS_PER_PAGE = 24;
+
     useEffect(() => {
-        loadMedia();
+        loadMedia(1);
     }, []);
 
-    const loadMedia = async () => {
+    const loadMedia = async (page = 1) => {
         try {
             setLoading(true);
-            const data = await api.getMedia();
-            setMedia(data);
+            setCurrentPage(page);
+            const response = await api.getMedia(page, ITEMS_PER_PAGE);
+            const data = response.data || response;
+            setMedia(Array.isArray(data) ? data : []);
+            if (response.meta) {
+                setPaginationMeta(response.meta);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        loadMedia(page);
     };
 
     const handleFileUpload = async (e) => {
@@ -175,6 +190,19 @@ export default function AdminMediaLibrary() {
                         ))
                     )}
                 </div>
+            )}
+
+            {/* Pagination */}
+            {paginationMeta && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={paginationMeta.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNextPage={paginationMeta.hasNextPage}
+                    hasPrevPage={paginationMeta.hasPrevPage}
+                    total={paginationMeta.total}
+                    limit={ITEMS_PER_PAGE}
+                />
             )}
         </div>
     );

@@ -22,6 +22,7 @@ import {
     BarChart
 } from 'lucide-react';
 import { api } from '../../services/api';
+import Pagination from '../../components/Pagination';
 
 export default function AdminEvents() {
     const navigate = useNavigate();
@@ -49,38 +50,55 @@ export default function AdminEvents() {
     const [loadingGateStats, setLoadingGateStats] = useState(false);
     const [selectedEventForGate, setSelectedEventForGate] = useState(null);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [paginationMeta, setPaginationMeta] = useState(null);
+    const ITEMS_PER_PAGE = 15;
+
     useEffect(() => {
-        loadEvents();
+        loadEvents(1);
     }, [statusFilter]);
 
-    const loadEvents = async () => {
+    const loadEvents = async (page = 1) => {
         try {
             setLoading(true);
+            setCurrentPage(page);
             const status = statusFilter === 'all' ? undefined : statusFilter.toUpperCase();
 
-            let data;
+            let response;
             if (user?.role === 'ADMIN') {
                 // Admin sees ALL events regardless of creator or status
-                data = await api.getAllEventsAdmin();
-                // Client-side filter by status if needed
-                if (status) {
+                response = await api.getAllEventsAdmin(page, ITEMS_PER_PAGE);
+                // Client-side filter by status if needed (or pass status to API)
+                let data = response.data || response;
+                if (status && Array.isArray(data)) {
                     data = data.filter(e => e.status === status);
+                }
+                setEvents(Array.isArray(data) ? data : []);
+                if (response.meta) {
+                    setPaginationMeta(response.meta);
                 }
             } else {
                 // Regular users see only their own events
-                data = await api.getMyEvents();
+                const data = await api.getMyEvents();
+                let filtered = data;
                 // Client-side filter for my-events
-                if (status) {
-                    data = data.filter(e => e.status === status);
+                if (status && Array.isArray(filtered)) {
+                    filtered = filtered.filter(e => e.status === status);
                 }
+                setEvents(filtered || []);
+                setPaginationMeta(null); // No pagination for my-events endpoint
             }
-            setEvents(data);
         } catch (err) {
             console.error('Failed to load events:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        loadEvents(page);
     };
 
     const handleDelete = async () => {
@@ -322,6 +340,19 @@ export default function AdminEvents() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {paginationMeta && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={paginationMeta.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNextPage={paginationMeta.hasNextPage}
+                    hasPrevPage={paginationMeta.hasPrevPage}
+                    total={paginationMeta.total}
+                    limit={ITEMS_PER_PAGE}
+                />
+            )}
 
             {/* Delete Confirmation Modal */}
             {deleteModalOpen && (
