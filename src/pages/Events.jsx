@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Ticket, Gift, Plus } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import Pagination from '../components/Pagination';
 import './Events.css';
 
 export default function Events() {
@@ -14,17 +15,27 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'my-events', 'lottery'
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationMeta, setPaginationMeta] = useState(null);
+  const ITEMS_PER_PAGE = 20;
+
   useEffect(() => {
-    loadData();
+    loadData(1);
   }, [user]);
 
-  const loadData = async () => {
+  const loadData = async (page = 1) => {
     try {
       setLoading(true);
-      
-      // Load all published events
-      const allEvents = await api.getEvents();
-      setEvents(allEvents);
+      setCurrentPage(page);
+
+      // Load all published events with pagination
+      const response = await api.getEvents(null, page, ITEMS_PER_PAGE);
+      const eventsData = response.data || response;
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
+      if (response.meta) {
+        setPaginationMeta(response.meta);
+      }
 
       // If user is logged in, load their events and lottery entries
       if (user) {
@@ -42,6 +53,11 @@ export default function Events() {
     }
   };
 
+  const handlePageChange = (page) => {
+    loadData(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -54,8 +70,9 @@ export default function Events() {
   };
 
   const getMinPrice = (tiers) => {
-    if (!tiers || tiers.length === 0) return null;
-    const prices = tiers.map(t => t.price);
+    if (!tiers || !Array.isArray(tiers) || tiers.length === 0) return null;
+    const prices = tiers.map(t => t.price).filter(price => typeof price === 'number');
+    if (prices.length === 0) return null;
     return Math.min(...prices);
   };
 
@@ -98,16 +115,16 @@ export default function Events() {
             )}
           </div>
         )}
-        
+
         <div className="event-content">
           <h3>{event.title}</h3>
-          
+
           <div className="event-meta">
             <div className="meta-item">
               <Calendar className="w-4 h-4" />
               <span>{formatDate(event.start_date)}</span>
             </div>
-            
+
             {event.venue && (
               <div className="meta-item">
                 <MapPin className="w-4 h-4" />
@@ -127,7 +144,7 @@ export default function Events() {
                 <span>From {formatCurrency(minPrice)}</span>
               </div>
             )}
-            
+
             <button className="btn-view">View Details</button>
           </div>
         </div>
@@ -154,16 +171,16 @@ export default function Events() {
             </div>
           </div>
         )}
-        
+
         <div className="event-content">
           <h3>{event.title}</h3>
-          
+
           <div className="event-meta">
             <div className="meta-item">
               <Calendar className="w-4 h-4" />
               <span>{formatDate(event.start_date)}</span>
             </div>
-            
+
             {event.venue && (
               <div className="meta-item">
                 <MapPin className="w-4 h-4" />
@@ -209,7 +226,7 @@ export default function Events() {
           <h1>Events</h1>
           <p>Discover and book tickets for amazing events</p>
         </div>
-        
+
         {user && (
           <button
             className="btn-create"
@@ -283,6 +300,19 @@ export default function Events() {
 
         {activeTab === 'lottery' && lotteryEntries.map(entry => renderLotteryEventCard(entry))}
       </div>
+
+      {/* Pagination for all events tab */}
+      {activeTab === 'all' && paginationMeta && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={paginationMeta.totalPages}
+          onPageChange={handlePageChange}
+          hasNextPage={paginationMeta.hasNextPage}
+          hasPrevPage={paginationMeta.hasPrevPage}
+          total={paginationMeta.total}
+          limit={ITEMS_PER_PAGE}
+        />
+      )}
     </div>
   );
 }

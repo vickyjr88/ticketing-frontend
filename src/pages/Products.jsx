@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, ExternalLink } from 'lucide-react';
 import { api } from '../services/api';
+import Pagination from '../components/Pagination';
 import './Products.css';
 
 export default function Products() {
@@ -12,26 +13,39 @@ export default function Products() {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('ALL');
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [paginationMeta, setPaginationMeta] = useState(null);
+    const ITEMS_PER_PAGE = 24;
+
     useEffect(() => {
-        loadProducts();
+        loadProducts(1);
     }, []);
 
     useEffect(() => {
         filterProducts();
     }, [products, search, category]);
 
-    const loadProducts = async () => {
+    const loadProducts = async (page = 1) => {
         try {
             setLoading(true);
-            const data = await api.getProducts();
-            // Filter out products where event is not active or null if needed
-            // But for now assume backend returns valid data
-            setProducts(data);
+            setCurrentPage(page);
+            const response = await api.getProducts(null, page, ITEMS_PER_PAGE);
+            const data = response.data || response;
+            setProducts(Array.isArray(data) ? data : []);
+            if (response.meta) {
+                setPaginationMeta(response.meta);
+            }
         } catch (err) {
             console.error('Failed to load products:', err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePageChange = (page) => {
+        loadProducts(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const filterProducts = () => {
@@ -150,6 +164,19 @@ export default function Products() {
                     ))
                 )}
             </div>
+
+            {/* Pagination */}
+            {paginationMeta && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={paginationMeta.totalPages}
+                    onPageChange={handlePageChange}
+                    hasNextPage={paginationMeta.hasNextPage}
+                    hasPrevPage={paginationMeta.hasPrevPage}
+                    total={paginationMeta.total}
+                    limit={ITEMS_PER_PAGE}
+                />
+            )}
         </div>
     );
 }

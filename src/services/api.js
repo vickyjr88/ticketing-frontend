@@ -251,8 +251,9 @@ class ApiService {
   }
 
   // Tickets & Scanning
-  async getMyTickets() {
-    return this.request('/tickets/my-tickets');
+  async getMyTickets(page = 1, limit = 20) {
+    const params = new URLSearchParams({ page, limit });
+    return this.request(`/tickets/my-tickets?${params}`);
   }
 
   async getTicket(ticketId) {

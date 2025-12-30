@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Ticket, Calendar, MapPin, QrCode, Download, Send } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 export default function MyTickets() {
   const [tickets, setTickets] = useState([]);
@@ -14,19 +15,35 @@ export default function MyTickets() {
   const [transferring, setTransferring] = useState(false);
   const [transferError, setTransferError] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationMeta, setPaginationMeta] = useState(null);
+  const ITEMS_PER_PAGE = 20;
+
   useEffect(() => {
-    loadTickets();
+    loadTickets(1);
   }, []);
 
-  const loadTickets = async () => {
+  const loadTickets = async (page = 1) => {
     try {
-      const data = await api.getMyTickets();
-      setTickets(data);
+      setLoading(true);
+      setCurrentPage(page);
+      const response = await api.getMyTickets(page, ITEMS_PER_PAGE);
+      const data = response.data || response;
+      setTickets(Array.isArray(data) ? data : []);
+      if (response.meta) {
+        setPaginationMeta(response.meta);
+      }
     } catch (error) {
       console.error('Failed to load tickets:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (page) => {
+    loadTickets(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleViewQR = async (ticket) => {
@@ -191,6 +208,19 @@ export default function MyTickets() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {paginationMeta && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={paginationMeta.totalPages}
+          onPageChange={handlePageChange}
+          hasNextPage={paginationMeta.hasNextPage}
+          hasPrevPage={paginationMeta.hasPrevPage}
+          total={paginationMeta.total}
+          limit={ITEMS_PER_PAGE}
+        />
       )}
 
       {/* Transfer Modal */}
