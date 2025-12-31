@@ -84,12 +84,16 @@ export default function AdminPromoCodes() {
 
     const loadEventsAndProducts = async () => {
         try {
-            const [eventsData, productsData] = await Promise.all([
-                api.getAllEventsAdmin(),
-                api.getProducts(), // Fetch all products
+            const [eventsResponse, productsResponse] = await Promise.all([
+                api.getAllEventsAdmin(1, 1000), // Fetch large number for dropdown
+                api.getProducts(null, 1, 1000), // Fetch large number for dropdown
             ]);
-            setEvents(eventsData || []);
-            setProducts(productsData || []);
+
+            const eventsData = eventsResponse.data || eventsResponse;
+            const productsData = productsResponse.data || productsResponse;
+
+            setEvents(Array.isArray(eventsData) ? eventsData : []);
+            setProducts(Array.isArray(productsData) ? productsData : []);
         } catch (err) {
             console.error('Failed to load events/products:', err);
         }

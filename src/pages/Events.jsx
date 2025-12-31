@@ -44,7 +44,10 @@ export default function Events() {
           api.getMyLotteryEntries()
         ]);
         setMyEvents(userEvents);
-        setLotteryEntries(entries);
+
+        // Handle paginated lottery entries
+        const entriesData = entries.data || entries;
+        setLotteryEntries(Array.isArray(entriesData) ? entriesData : []);
       }
     } catch (error) {
       console.error('Failed to load events:', error);
