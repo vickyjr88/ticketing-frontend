@@ -9,6 +9,7 @@ import Products from './pages/Products';
 import EventDetails from './pages/EventDetails';
 import Checkout from './pages/Checkout';
 import MyTickets from './pages/MyTickets';
+import MyOrders from './pages/MyOrders';
 import PaystackCallback from './pages/PaystackCallback';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -107,6 +108,9 @@ function Layout({ children }) {
                 <>
                   <Link to="/my-tickets" className="text-gray-700 hover:text-blue-600 font-medium">
                     My Tickets
+                  </Link>
+                  <Link to="/my-orders" className="text-gray-700 hover:text-blue-600 font-medium">
+                    My Orders
                   </Link>
                   <div className="flex items-center gap-2">
                     <Link to="/profile" className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
@@ -251,6 +255,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyTickets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-orders"
+              element={
+                <ProtectedRoute>
+                  <MyOrders />
                 </ProtectedRoute>
               }
             />

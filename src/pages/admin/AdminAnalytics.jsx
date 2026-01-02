@@ -104,6 +104,12 @@ export default function AdminAnalytics() {
 
     useEffect(() => {
         loadAnalytics();
+
+        const interval = setInterval(() => {
+            loadAnalytics();
+        }, 60000); // Refresh every 60 seconds
+
+        return () => clearInterval(interval);
     }, [timeRange]);
 
     const loadAnalytics = async () => {
