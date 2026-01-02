@@ -4,6 +4,7 @@ import { Ticket, LogOut, User } from 'lucide-react';
 
 // Pages
 import Events from './pages/Events';
+import LandingPage from './pages/LandingPage';
 import Products from './pages/Products';
 import EventDetails from './pages/EventDetails';
 import Checkout from './pages/Checkout';
@@ -205,8 +206,10 @@ function App() {
           </Route>
 
           {/* Public & User Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route element={<Layout><Outlet /></Layout>}>
-            <Route path="/" element={<Navigate to="/events" replace />} />
+            {/* Redirect /events/ to /events? moved root to LandingPage */}
+            {/* <Route path="/" element={<Navigate to="/events" replace />} /> */}
             <Route path="/events" element={<Events />} />
             <Route path="/products" element={<Products />} />
             <Route path="/events/:id" element={<EventDetails />} />

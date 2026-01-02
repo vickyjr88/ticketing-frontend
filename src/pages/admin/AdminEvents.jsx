@@ -20,7 +20,8 @@ import {
     XCircle,
 
     Bell,
-    BarChart
+    BarChart,
+    Star
 } from 'lucide-react';
 import { api } from '../../services/api';
 import Pagination from '../../components/Pagination';
@@ -170,6 +171,17 @@ export default function AdminEvents() {
             setError(err.message || 'Failed to issue tickets');
         } finally {
             setSubmittingComp(false);
+        }
+    };
+
+    const handleFeatureEvent = async (event) => {
+        if (!confirm(`Set "${event.title}" as the featured event?`)) return;
+        try {
+            await api.featureEvent(event.id);
+            loadEvents(); // Refresh list to show updated status
+        } catch (err) {
+            console.error(err);
+            alert('Failed to feature event');
         }
     };
 
@@ -379,6 +391,13 @@ export default function AdminEvents() {
                                     onClick={() => handleOpenComp(event)}
                                 >
                                     <Gift className="w-4 h-4" />
+                                </button>
+                                <button
+                                    className="action-btn"
+                                    title={event.is_featured ? "Featured Event" : "Feature this Event"}
+                                    onClick={() => handleFeatureEvent(event)}
+                                >
+                                    <Star className={`w-4 h-4 ${event.is_featured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                                 </button>
                             </div>
                         </div>

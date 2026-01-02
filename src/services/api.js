@@ -149,6 +149,14 @@ class ApiService {
     });
   }
 
+  async getFeaturedEvent() {
+    return this.request('/events/featured');
+  }
+
+  async featureEvent(id) {
+    return this.request(`/events/${id}/feature`, { method: 'POST' });
+  }
+
   async createTier(eventId, tierData) {
     return this.request(`/events/${eventId}/tiers`, {
       method: 'POST',
