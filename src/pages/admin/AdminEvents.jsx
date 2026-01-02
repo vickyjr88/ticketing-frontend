@@ -13,6 +13,7 @@ import {
     Clock,
     MapPin,
     Ticket,
+    Gift,
     MoreVertical,
     AlertCircle,
     CheckCircle,
@@ -49,6 +50,12 @@ export default function AdminEvents() {
     const [gateStats, setGateStats] = useState(null);
     const [loadingGateStats, setLoadingGateStats] = useState(false);
     const [selectedEventForGate, setSelectedEventForGate] = useState(null);
+
+    // Complimentary Ticket State
+    const [complimentaryModalOpen, setComplimentaryModalOpen] = useState(false);
+    const [selectedEventForComp, setSelectedEventForComp] = useState(null);
+    const [compForm, setCompForm] = useState({ email: '', tierId: '', quantity: 1 });
+    const [submittingComp, setSubmittingComp] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -132,6 +139,37 @@ export default function AdminEvents() {
             // Don't show error to user, just show empty or partial state
         } finally {
             setLoadingWaitlist(false);
+        }
+    };
+
+    const handleOpenComp = (event) => {
+        const tiers = event.ticket_tiers || [];
+        setSelectedEventForComp(event);
+        setCompForm({
+            email: '',
+            tierId: tiers.length > 0 ? tiers[0].id : '',
+            quantity: 1
+        });
+        setComplimentaryModalOpen(true);
+    };
+
+    const handleSubmitComp = async (e) => {
+        e.preventDefault();
+        setSubmittingComp(true);
+        try {
+            await api.issueComplimentaryTicket({
+                eventId: selectedEventForComp.id,
+                tierId: compForm.tierId,
+                email: compForm.email,
+                quantity: Number(compForm.quantity)
+            });
+            setComplimentaryModalOpen(false);
+            alert('Complimentary tickets issued successfully!');
+        } catch (err) {
+            console.error('Failed to issue tickets:', err);
+            setError(err.message || 'Failed to issue tickets');
+        } finally {
+            setSubmittingComp(false);
         }
     };
 
@@ -335,6 +373,13 @@ export default function AdminEvents() {
                                 >
                                     <BarChart className="w-4 h-4" />
                                 </button>
+                                <button
+                                    className="action-btn edit"
+                                    title="Issue Complimentary Ticket"
+                                    onClick={() => handleOpenComp(event)}
+                                >
+                                    <Gift className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
                     ))
@@ -382,6 +427,82 @@ export default function AdminEvents() {
                                 {deleting ? 'Deleting...' : 'Delete Event'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Complimentary Ticket Modal */}
+            {complimentaryModalOpen && selectedEventForComp && (
+                <div className="modal-overlay" onClick={() => setComplimentaryModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <Gift className="w-8 h-8 text-purple-600" />
+                            <div>
+                                <h2>Issue Complimentary Ticket</h2>
+                                <p className="text-sm text-gray-500">{selectedEventForComp.title}</p>
+                            </div>
+                        </div>
+                        <form onSubmit={handleSubmitComp}>
+                            <div className="modal-body space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Email</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full p-2 border rounded-md"
+                                        value={compForm.email}
+                                        onChange={(e) => setCompForm({ ...compForm, email: e.target.value })}
+                                        placeholder="user@example.com"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">User must be registered.</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ticket Tier</label>
+                                    <select
+                                        required
+                                        className="w-full p-2 border rounded-md"
+                                        value={compForm.tierId}
+                                        onChange={(e) => setCompForm({ ...compForm, tierId: e.target.value })}
+                                    >
+                                        <option value="">Select Tier</option>
+                                        {selectedEventForComp.ticket_tiers?.map(tier => (
+                                            <option key={tier.id} value={tier.id}>
+                                                {tier.name} ({tier.remaining_quantity} left)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="10"
+                                        required
+                                        className="w-full p-2 border rounded-md"
+                                        value={compForm.quantity}
+                                        onChange={(e) => setCompForm({ ...compForm, quantity: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-actions">
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => setComplimentaryModalOpen(false)}
+                                    disabled={submittingComp}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    disabled={submittingComp}
+                                >
+                                    {submittingComp ? 'Issuing...' : 'Issue Tickets'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

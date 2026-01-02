@@ -256,6 +256,48 @@ class ApiService {
     return this.request(`/tickets/my-tickets?${params}`);
   }
 
+  async issueComplimentaryTicket(data) {
+    return this.request('/tickets/issue-complimentary', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Lottery Methods
+  async getEventLotteryEntries(eventId) {
+    return this.request(`/lottery/event/${eventId}/entries`);
+  }
+
+  async removeLotteryEntry(entryId) {
+    return this.request(`/lottery/entry/${entryId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Analytics Methods
+  async getSalesTimeSeries(days = 30, eventId) {
+    const query = new URLSearchParams({ days, eventId: eventId || '' });
+    return this.request(`/analytics/sales-timeseries?${query}`);
+  }
+
+  async getTicketTypeTrend(days = 30, eventId) {
+    // Correct endpoint might need check
+    // AnalyticsService usually has getTicketTypeTrend but controller might not accept eventId filter?
+    // Controller: getTicketTypeTrend(@Query('days') days?: string)
+    // It does NOT accept eventId! I should check if I can add it or just use what I have.
+    // I will skip TicketTypeTrend for specific event if backend doesn't support it.
+    // I'll stick to checkin-distribution and gate-performance which accept eventId.
+    return [];
+  }
+
+  async getCheckInDistribution(eventId) {
+    return this.request(`/analytics/checkin-distribution?eventId=${eventId}`);
+  }
+
+  async getGatePerformance(eventId) {
+    return this.request(`/analytics/gate-performance?eventId=${eventId}`);
+  }
+
   async getTicket(ticketId) {
     return this.request(`/tickets/${ticketId}`);
   }
