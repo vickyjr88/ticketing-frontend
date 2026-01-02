@@ -16,7 +16,8 @@ import {
     Home,
     Tag,
     BarChart3,
-    Image
+    Image,
+    CreditCard
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -40,6 +41,7 @@ export default function AdminLayout() {
         { to: '/admin/users', icon: Users, label: 'Users', roles: ['ADMIN'] },
         { to: '/admin/lottery', icon: Gift, label: 'Lottery', roles: ['ADMIN'] },
         { to: '/admin/promo-codes', icon: Tag, label: 'Promo Codes', roles: ['ADMIN'] },
+        { to: '/admin/payments', icon: CreditCard, label: 'Payments', roles: ['ADMIN'] },
         { to: '/admin/scanner', icon: Scan, label: 'Scanner', roles: ['ADMIN', 'SCANNER'] },
     ];
 

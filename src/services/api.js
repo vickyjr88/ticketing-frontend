@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://3.225.246.72/api';
+const API_BASE_URL = window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || 'https://3.225.246.72/api';
 
 class ApiService {
   constructor() {
@@ -296,6 +296,17 @@ class ApiService {
     // I will skip TicketTypeTrend for specific event if backend doesn't support it.
     // I'll stick to checkin-distribution and gate-performance which accept eventId.
     return [];
+  }
+
+  async getPaymentSettings() {
+    return this.request('/payments/settings');
+  }
+
+  async updatePaymentSettings(provider, data) {
+    return this.request(`/payments/settings/${provider}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   async getCheckInDistribution(eventId) {

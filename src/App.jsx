@@ -29,6 +29,7 @@ import AdminLottery from './pages/admin/AdminLottery';
 import AdminPromoCodes from './pages/admin/AdminPromoCodes';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminMediaLibrary from './pages/admin/AdminMediaLibrary';
+import AdminPaymentSettings from './pages/admin/AdminPaymentSettings';
 
 // User Dashboard Pages
 import UserLayout from './pages/admin/UserLayout';
@@ -188,6 +189,7 @@ function App() {
             <Route path="promo-codes" element={<AdminPromoCodes />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="media" element={<AdminMediaLibrary />} />
+            <Route path="payments" element={<AdminPaymentSettings />} />
           </Route>
 
           {/* User Dashboard Routes */}
