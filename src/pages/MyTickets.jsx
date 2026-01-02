@@ -92,7 +92,7 @@ export default function MyTickets() {
   const getStatusColor = (status) => {
     const colors = {
       ISSUED: 'bg-green-100 text-green-800',
-      WON: 'bg-purple-100 text-purple-800',
+      WON: 'bg-red-100 text-red-800',
       REDEEMED: 'bg-gray-100 text-gray-800',
       POOL: 'bg-yellow-100 text-yellow-800',
       CANCELLED: 'bg-red-100 text-red-800',

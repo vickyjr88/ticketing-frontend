@@ -32,7 +32,7 @@ export default function LandingPage() {
 
     if (loading) return (
         <div className="flex justify-center items-center h-screen bg-gray-900 text-white">
-            <Loader className="animate-spin w-10 h-10 text-indigo-500" />
+            <Loader className="animate-spin w-10 h-10 text-blue-500" />
         </div>
     );
 
@@ -48,7 +48,7 @@ export default function LandingPage() {
                     {event.banner_image_url ? (
                         <div className="absolute inset-0 bg-black/60 z-10"></div>
                     ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-black z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-blue-800 to-black z-10"></div>
                     )}
                     {event.banner_image_url && (
                         <img
@@ -78,11 +78,11 @@ export default function LandingPage() {
 
                     <div className="flex flex-wrap items-center justify-center gap-6 mb-16 text-lg font-medium">
                         <div className="flex items-center bg-black/40 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/10 shadow-lg">
-                            <Calendar className="w-6 h-6 mr-3 text-indigo-400" />
+                            <Calendar className="w-6 h-6 mr-3 text-blue-400" />
                             {new Date(event.start_date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className="flex items-center bg-black/40 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/10 shadow-lg">
-                            <MapPin className="w-6 h-6 mr-3 text-pink-400" />
+                            <MapPin className="w-6 h-6 mr-3 text-red-400" />
                             {event.venue || 'Venue TBD'}
                         </div>
                     </div>
@@ -90,7 +90,7 @@ export default function LandingPage() {
                     <div className="flex flex-col sm:flex-row gap-6 justify-center">
                         <Link
                             to={`/events/${event.id}`}
-                            className="group relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white transition-all duration-200 bg-indigo-600 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-700 hover:scale-105 shadow-indigo-500/30 shadow-lg"
+                            className="group relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white transition-all duration-200 bg-blue-600 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 hover:bg-blue-700 hover:scale-105 shadow-blue-500/30 shadow-lg"
                         >
                             Get Tickets
                             <ArrowRight className="ml-3 w-6 h-6 transition-transform group-hover:translate-x-1" />

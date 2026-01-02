@@ -294,7 +294,7 @@ export default function EventDetails() {
               <p className="text-sm text-gray-600">Tickets in Pool</p>
             </div>
             <div className="bg-white rounded-lg p-4 text-center">
-              <p className="text-2xl font-bold text-purple-600">{lotteryStats.totalWinners}</p>
+              <p className="text-2xl font-bold text-red-600">{lotteryStats.totalWinners}</p>
               <p className="text-sm text-gray-600">Winners</p>
             </div>
           </div>

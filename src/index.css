@@ -240,7 +240,7 @@ body {
 }
 
 .gradient-purple .stat-icon {
-  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 
 .gradient-blue .stat-icon {
@@ -510,7 +510,7 @@ body {
 }
 
 .action-icon.bg-purple {
-  background: #a855f7;
+  background: #dc2626;
 }
 
 .action-icon.bg-blue {
@@ -2247,7 +2247,7 @@ body {
 
 /* Event Info Card */
 .event-info-card {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
   padding: 1.5rem;
   border-radius: 1rem;
   color: white;
@@ -2577,7 +2577,7 @@ body {
 }
 
 .contact-hero {
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
   padding: 4rem 1.5rem;
   text-align: center;
   position: relative;
@@ -2666,7 +2666,7 @@ body {
 }
 
 .info-icon.hours-icon {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
 }
 
 .info-card h3 {
@@ -2801,7 +2801,7 @@ body {
   gap: 0.5rem;
   width: 100%;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -2826,7 +2826,7 @@ body {
 }
 
 .faq-teaser {
-  background: linear-gradient(135deg, #f0f9ff 0%, #ede9fe 100%);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 1rem;
   padding: 2rem;
   text-align: center;
@@ -2926,7 +2926,7 @@ body {
 }
 
 .about-hero {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #7c3aed 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
   padding: 5rem 1.5rem;
   text-align: center;
   position: relative;
@@ -3082,7 +3082,7 @@ body {
 .value-icon {
   width: 3.5rem;
   height: 3.5rem;
-  background: linear-gradient(135deg, #eff6ff 0%, #ede9fe 100%);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 1rem;
   display: flex;
   align-items: center;
@@ -3106,7 +3106,7 @@ body {
 
 .stats-section {
   padding: 4rem 0;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
 }
 
 .stats-grid {
@@ -3220,7 +3220,7 @@ body {
 .team-avatar {
   width: 5rem;
   height: 5rem;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -3261,13 +3261,13 @@ body {
 .awards-icon {
   width: 5rem;
   height: 5rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem auto;
-  color: #d97706;
+  color: #dc2626;
 }
 
 .awards-content h2 {
