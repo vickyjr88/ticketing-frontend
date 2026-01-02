@@ -69,7 +69,10 @@ export default function MyOrders() {
                     return;
                 }
 
-                const paymentData = { phoneNumber };
+                const paymentData = {
+                    phoneNumber,
+                    paymentProvider: 'MPESA'
+                };
                 await api.initiatePayment(selectedOrder.id, paymentData);
                 setPaymentStatus('processing');
                 checkPaymentStatus(selectedOrder.id);
@@ -77,6 +80,7 @@ export default function MyOrders() {
                 const paymentData = {
                     successUrl: `${window.location.origin}/payment-success?orderId=${selectedOrder.id}`,
                     cancelUrl: `${window.location.origin}/my-orders`,
+                    paymentProvider: 'STRIPE'
                 };
                 const stripeData = await api.initiatePayment(selectedOrder.id, paymentData);
                 window.location.href = stripeData.url;
@@ -84,6 +88,7 @@ export default function MyOrders() {
                 const paymentData = {
                     successUrl: `${window.location.origin}/paystack/callback`,
                     cancelUrl: `${window.location.origin}/my-orders`,
+                    paymentProvider: 'PAYSTACK'
                 };
                 const paystackData = await api.initiatePayment(selectedOrder.id, paymentData);
                 if (paystackData.data?.authorization_url) {
