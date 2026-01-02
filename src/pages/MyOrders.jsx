@@ -32,8 +32,9 @@ export default function MyOrders() {
 
     const fetchOrders = async () => {
         try {
-            const data = await api.getMyOrders();
-            setOrders(data);
+            const response = await api.getMyOrders();
+            const data = response.data || response;
+            setOrders(Array.isArray(data) ? data : []);
         } catch (err) {
             setError('Failed to load orders');
             console.error(err);
