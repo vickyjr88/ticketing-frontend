@@ -119,7 +119,7 @@ export default function AdminEventForm() {
         try {
             const [sales, checkins] = await Promise.all([
                 api.getSalesTimeSeries(30, id),
-                api.getCheckInDistribution(id)
+                api.getGatePerformance(id)
             ]);
             setAnalyticsData({ sales, checkins });
         } catch (err) {
