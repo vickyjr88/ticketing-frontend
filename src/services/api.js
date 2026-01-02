@@ -1,4 +1,4 @@
-const API_BASE_URL = window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || 'https://3.225.246.72/api';
+const API_BASE_URL = window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || 'https://tickets.vitaldigitalmedia.net/api';
 
 class ApiService {
   constructor() {
