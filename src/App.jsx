@@ -17,6 +17,8 @@ import Adopt from './pages/Adopt';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
+import ContactUs from './pages/ContactUs';
+import AboutUs from './pages/AboutUs';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -31,6 +33,8 @@ import AdminPromoCodes from './pages/admin/AdminPromoCodes';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import AdminMediaLibrary from './pages/admin/AdminMediaLibrary';
 import AdminPaymentSettings from './pages/admin/AdminPaymentSettings';
+import AdminGates from './pages/admin/AdminGates';
+import AdminContacts from './pages/admin/AdminContacts';
 
 // User Dashboard Pages
 import UserLayout from './pages/admin/UserLayout';
@@ -155,6 +159,14 @@ function Layout({ children }) {
       {/* Footer */}
       <footer className="bg-white border-t mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+            <div className="flex gap-6">
+              <Link to="/events" className="text-gray-600 hover:text-blue-600 transition-colors">Events</Link>
+              <Link to="/products" className="text-gray-600 hover:text-blue-600 transition-colors">Shop</Link>
+              <Link to="/about" className="text-gray-600 hover:text-blue-600 transition-colors">About Us</Link>
+              <Link to="/contact" className="text-gray-600 hover:text-blue-600 transition-colors">Contact</Link>
+            </div>
+          </div>
           <div className="text-center text-gray-600">
             <p className="mb-2">&copy; 2024 Home Run with Pipita. All rights reserved.</p>
             <p className="text-sm">
@@ -194,6 +206,8 @@ function App() {
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="media" element={<AdminMediaLibrary />} />
             <Route path="payments" element={<AdminPaymentSettings />} />
+            <Route path="gates" element={<AdminGates />} />
+            <Route path="contacts" element={<AdminContacts />} />
           </Route>
 
           {/* User Dashboard Routes */}
@@ -224,6 +238,8 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/about" element={<AboutUs />} />
 
             {/* Protected Routes */}
             <Route

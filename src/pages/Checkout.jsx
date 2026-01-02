@@ -26,6 +26,26 @@ export default function Checkout() {
   const [availableProducts, setAvailableProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState(initialProducts); // { productId: quantity }
 
+  // Fetch payment config
+  const [enabledProviders, setEnabledProviders] = useState([]);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  useEffect(() => {
+    api.getPublicPaymentConfig()
+      .then(configs => {
+        const enabled = configs.filter(c => c.is_enabled).map(c => c.provider);
+        setEnabledProviders(enabled);
+        if (enabled.length > 0 && !enabled.includes(paymentProvider)) {
+          setPaymentProvider(enabled[0]);
+        }
+        setConfigLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load payment config', err);
+        setConfigLoading(false);
+      });
+  }, []);
+
   useEffect(() => {
     if (!eventId || (items.length === 0 && Object.keys(initialProducts).length === 0)) {
       navigate('/events');
@@ -145,7 +165,7 @@ export default function Checkout() {
           return;
         }
 
-        const paymentData = { phoneNumber };
+        const paymentData = { phoneNumber, paymentProvider: 'MPESA' };
         await api.initiatePayment(orderData.order.id, paymentData);
         setPaymentStatus('processing');
         checkPaymentStatus(orderData.order.id);
@@ -153,6 +173,7 @@ export default function Checkout() {
         const paymentData = {
           successUrl: `${window.location.origin}/payment-success?orderId=${orderData.order.id}`,
           cancelUrl: `${window.location.origin}/payment-cancel`,
+          paymentProvider: 'STRIPE'
         };
         const stripeData = await api.initiatePayment(orderData.order.id, paymentData);
         // Redirect to Stripe
@@ -161,6 +182,7 @@ export default function Checkout() {
         const paymentData = {
           successUrl: `${window.location.origin}/paystack/callback`,
           cancelUrl: `${window.location.origin}/payment-cancel`,
+          paymentProvider: 'PAYSTACK'
         };
         const paystackData = await api.initiatePayment(orderData.order.id, paymentData);
         // Redirect to Paystack
@@ -375,73 +397,90 @@ export default function Checkout() {
 
           {paymentStatus === 'idle' && (
             <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="space-y-4 mb-6">
-                {/* M-Pesa */}
-                <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentProvider === 'MPESA'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  onClick={() => setPaymentProvider('MPESA')}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Smartphone className="w-6 h-6 text-green-600" />
-                      <div>
-                        <p className="font-semibold">M-Pesa</p>
-                        <p className="text-sm text-gray-600">Pay via Lipa Na M-Pesa</p>
+              {configLoading ? (
+                <div className="flex justify-center p-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : enabledProviders.length === 0 ? (
+                <div className="text-center p-4 text-gray-500">
+                  <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                  <p>No payment methods available.</p>
+                </div>
+              ) : (
+                <div className="space-y-4 mb-6">
+                  {/* M-Pesa */}
+                  {enabledProviders.includes('MPESA') && (
+                    <div
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentProvider === 'MPESA'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      onClick={() => setPaymentProvider('MPESA')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Smartphone className="w-6 h-6 text-green-600" />
+                          <div>
+                            <p className="font-semibold">M-Pesa</p>
+                            <p className="text-sm text-gray-600">Pay via Lipa Na M-Pesa</p>
+                          </div>
+                        </div>
+                        {paymentProvider === 'MPESA' && (
+                          <Check className="w-6 h-6 text-blue-600" />
+                        )}
                       </div>
                     </div>
-                    {paymentProvider === 'MPESA' && (
-                      <Check className="w-6 h-6 text-blue-600" />
-                    )}
-                  </div>
-                </div>
+                  )}
 
-                {/* Stripe */}
-                <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentProvider === 'STRIPE'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  onClick={() => setPaymentProvider('STRIPE')}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-6 h-6 text-blue-600" />
-                      <div>
-                        <p className="font-semibold">Card Payment (Stripe)</p>
-                        <p className="text-sm text-gray-600">Pay with Credit/Debit Card</p>
+                  {/* Stripe */}
+                  {enabledProviders.includes('STRIPE') && (
+                    <div
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentProvider === 'STRIPE'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      onClick={() => setPaymentProvider('STRIPE')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="w-6 h-6 text-blue-600" />
+                          <div>
+                            <p className="font-semibold">Card Payment (Stripe)</p>
+                            <p className="text-sm text-gray-600">Pay with Credit/Debit Card</p>
+                          </div>
+                        </div>
+                        {paymentProvider === 'STRIPE' && (
+                          <Check className="w-6 h-6 text-blue-600" />
+                        )}
                       </div>
                     </div>
-                    {paymentProvider === 'STRIPE' && (
-                      <Check className="w-6 h-6 text-blue-600" />
-                    )}
-                  </div>
-                </div>
+                  )}
 
-                {/* Paystack */}
-                <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentProvider === 'PAYSTACK'
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  onClick={() => setPaymentProvider('PAYSTACK')}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-6 h-6 text-green-600" />
-                      <div>
-                        <p className="font-semibold">Paystack</p>
-                        <p className="text-sm text-gray-600">Mobile Money & Cards</p>
+                  {/* Paystack */}
+                  {enabledProviders.includes('PAYSTACK') && (
+                    <div
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentProvider === 'PAYSTACK'
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      onClick={() => setPaymentProvider('PAYSTACK')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="w-6 h-6 text-green-600" />
+                          <div>
+                            <p className="font-semibold">Paystack</p>
+                            <p className="text-sm text-gray-600">Mobile Money & Cards</p>
+                          </div>
+                        </div>
+                        {paymentProvider === 'PAYSTACK' && (
+                          <Check className="w-6 h-6 text-blue-600" />
+                        )}
                       </div>
                     </div>
-                    {paymentProvider === 'PAYSTACK' && (
-                      <Check className="w-6 h-6 text-blue-600" />
-                    )}
-                  </div>
+                  )}
                 </div>
-              </div>
+              )}
 
               {/* M-Pesa Phone Number */}
               {paymentProvider === 'MPESA' && (

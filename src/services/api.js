@@ -298,6 +298,10 @@ class ApiService {
     return [];
   }
 
+  async getPublicPaymentConfig() {
+    return this.request('/payments/config');
+  }
+
   async getPaymentSettings() {
     return this.request('/payments/settings');
   }
@@ -528,6 +532,140 @@ class ApiService {
 
   async deleteMedia(id) {
     return this.request(`/media/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== GATES MANAGEMENT ====================
+
+  async getGates(includeInactive = false) {
+    const params = includeInactive ? '?includeInactive=true' : '';
+    return this.request(`/gates${params}`);
+  }
+
+  async getGatesWithStats() {
+    return this.request('/gates/with-stats');
+  }
+
+  async getGate(id) {
+    return this.request(`/gates/${id}`);
+  }
+
+  async createGate(gateData) {
+    return this.request('/gates', {
+      method: 'POST',
+      body: JSON.stringify(gateData),
+    });
+  }
+
+  async updateGate(id, gateData) {
+    return this.request(`/gates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(gateData),
+    });
+  }
+
+  async deleteGate(id) {
+    return this.request(`/gates/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Gate Assignments
+  async getEventGates(eventId) {
+    return this.request(`/gates/event/${eventId}`);
+  }
+
+  async assignGateToEvent(gateId, eventId, scannerId = null) {
+    return this.request('/gates/assign', {
+      method: 'POST',
+      body: JSON.stringify({ gate_id: gateId, event_id: eventId, scanner_id: scannerId }),
+    });
+  }
+
+  async bulkAssignGatesToEvent(eventId, gateIds) {
+    return this.request('/gates/bulk-assign', {
+      method: 'POST',
+      body: JSON.stringify({ event_id: eventId, gate_ids: gateIds }),
+    });
+  }
+
+  async removeGateFromEvent(assignmentId) {
+    return this.request(`/gates/assignment/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async assignScannerToGate(assignmentId, scannerId) {
+    return this.request(`/gates/assignment/${assignmentId}/scanner`, {
+      method: 'PUT',
+      body: JSON.stringify({ scanner_id: scannerId }),
+    });
+  }
+
+  async removeScannerFromGate(assignmentId) {
+    return this.request(`/gates/assignment/${assignmentId}/scanner`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getGateScanners() {
+    return this.request('/gates/scanners');
+  }
+
+  async getScannerAssignments(scannerId) {
+    return this.request(`/gates/scanner/${scannerId}/assignments`);
+  }
+
+  // Contact Form
+  async submitContactForm(data) {
+    return this.request('/contact', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Admin Contact Management
+  async getContactMessages(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append('status', params.status);
+    if (params.subject) queryParams.append('subject', params.subject);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    const query = queryParams.toString();
+    return this.request(`/contact${query ? `?${query}` : ''}`);
+  }
+
+  async getContactMessage(id) {
+    return this.request(`/contact/${id}`);
+  }
+
+  async getContactStats() {
+    return this.request('/contact/stats');
+  }
+
+  async updateContactMessage(id, data) {
+    return this.request(`/contact/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async replyToContactMessage(id, replyMessage) {
+    return this.request(`/contact/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ reply_message: replyMessage }),
+    });
+  }
+
+  async archiveContactMessage(id) {
+    return this.request(`/contact/${id}/archive`, {
+      method: 'PUT',
+    });
+  }
+
+  async deleteContactMessage(id) {
+    return this.request(`/contact/${id}`, {
       method: 'DELETE',
     });
   }

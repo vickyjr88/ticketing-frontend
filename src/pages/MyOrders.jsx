@@ -25,6 +25,8 @@ export default function MyOrders() {
     const [processingPayment, setProcessingPayment] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, failed, timeout
     const [paymentError, setPaymentError] = useState('');
+    const [enabledProviders, setEnabledProviders] = useState([]);
+    const [configLoading, setConfigLoading] = useState(true);
 
     useEffect(() => {
         fetchOrders();
@@ -45,10 +47,24 @@ export default function MyOrders() {
 
     const handlePayNow = (order) => {
         setSelectedOrder(order);
-        setPaymentProvider('MPESA');
         setPaymentStatus('idle');
         setPaymentError('');
         setPhoneNumber('');
+        // Fetch config when modal opens
+        setConfigLoading(true);
+        api.getPublicPaymentConfig()
+            .then(configs => {
+                const enabled = configs.filter(c => c.is_enabled).map(c => c.provider);
+                setEnabledProviders(enabled);
+                if (enabled.length > 0) {
+                    setPaymentProvider(enabled[0]);
+                }
+                setConfigLoading(false);
+            })
+            .catch(err => {
+                console.error('Failed to load payment config:', err);
+                setConfigLoading(false);
+            });
     };
 
     const handleCloseModal = () => {
@@ -279,43 +295,61 @@ export default function MyOrders() {
                             <>
                                 <div className="space-y-4 mb-6">
                                     {/* Payment Methods */}
-                                    <div className="grid grid-cols-1 gap-3">
-                                        <div
-                                            onClick={() => setPaymentProvider('MPESA')}
-                                            className={`p-4 border rounded-lg cursor-pointer flex items-center justify-between ${paymentProvider === 'MPESA' ? 'border-blue-600 bg-blue-50' : 'hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Smartphone className="w-5 h-5 text-green-600" />
-                                                <span className="font-medium">M-Pesa</span>
-                                            </div>
-                                            {paymentProvider === 'MPESA' && <Check className="w-5 h-5 text-blue-600" />}
+                                    {/* Payment Methods */}
+                                    {configLoading ? (
+                                        <div className="flex justify-center p-4">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                         </div>
+                                    ) : enabledProviders.length === 0 ? (
+                                        <div className="text-center p-4 text-gray-500">
+                                            <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                                            <p>No payment methods available.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {enabledProviders.includes('MPESA') && (
+                                                <div
+                                                    onClick={() => setPaymentProvider('MPESA')}
+                                                    className={`p-4 border rounded-lg cursor-pointer flex items-center justify-between ${paymentProvider === 'MPESA' ? 'border-blue-600 bg-blue-50' : 'hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Smartphone className="w-5 h-5 text-green-600" />
+                                                        <span className="font-medium">M-Pesa</span>
+                                                    </div>
+                                                    {paymentProvider === 'MPESA' && <Check className="w-5 h-5 text-blue-600" />}
+                                                </div>
+                                            )}
 
-                                        <div
-                                            onClick={() => setPaymentProvider('STRIPE')}
-                                            className={`p-4 border rounded-lg cursor-pointer flex items-center justify-between ${paymentProvider === 'STRIPE' ? 'border-blue-600 bg-blue-50' : 'hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <CreditCard className="w-5 h-5 text-blue-600" />
-                                                <span className="font-medium">Card (Stripe)</span>
-                                            </div>
-                                            {paymentProvider === 'STRIPE' && <Check className="w-5 h-5 text-blue-600" />}
-                                        </div>
+                                            {enabledProviders.includes('STRIPE') && (
+                                                <div
+                                                    onClick={() => setPaymentProvider('STRIPE')}
+                                                    className={`p-4 border rounded-lg cursor-pointer flex items-center justify-between ${paymentProvider === 'STRIPE' ? 'border-blue-600 bg-blue-50' : 'hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <CreditCard className="w-5 h-5 text-blue-600" />
+                                                        <span className="font-medium">Card (Stripe)</span>
+                                                    </div>
+                                                    {paymentProvider === 'STRIPE' && <Check className="w-5 h-5 text-blue-600" />}
+                                                </div>
+                                            )}
 
-                                        <div
-                                            onClick={() => setPaymentProvider('PAYSTACK')}
-                                            className={`p-4 border rounded-lg cursor-pointer flex items-center justify-between ${paymentProvider === 'PAYSTACK' ? 'border-blue-600 bg-blue-50' : 'hover:bg-gray-50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <CreditCard className="w-5 h-5 text-green-600" />
-                                                <span className="font-medium">Paystack</span>
-                                            </div>
-                                            {paymentProvider === 'PAYSTACK' && <Check className="w-5 h-5 text-blue-600" />}
+                                            {enabledProviders.includes('PAYSTACK') && (
+                                                <div
+                                                    onClick={() => setPaymentProvider('PAYSTACK')}
+                                                    className={`p-4 border rounded-lg cursor-pointer flex items-center justify-between ${paymentProvider === 'PAYSTACK' ? 'border-blue-600 bg-blue-50' : 'hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <CreditCard className="w-5 h-5 text-green-600" />
+                                                        <span className="font-medium">Paystack</span>
+                                                    </div>
+                                                    {paymentProvider === 'PAYSTACK' && <Check className="w-5 h-5 text-blue-600" />}
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
+                                    )}
 
                                     {/* M-Pesa Input */}
                                     {paymentProvider === 'MPESA' && (
