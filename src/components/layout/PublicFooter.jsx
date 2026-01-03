@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
+import Partners from './Partners';
 
 const productLinks = [
   { label: 'Features', to: '/#features' },
@@ -52,6 +53,9 @@ export default function PublicFooter() {
           {renderLinks('Company', companyLinks)}
           {renderLinks('Legal', legalLinks)}
         </div>
+        
+        <Partners />
+        
         <div className="border-t border-gray-800 pt-8 text-center text-sm">
           <p>&copy; 2025 Dexter. All rights reserved.</p>
         </div>
