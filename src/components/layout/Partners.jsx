@@ -51,11 +51,12 @@ export default function Partners() {
   ];
 
   return (
-    <div className="py-12 border-t border-gray-800">
+    <div className="py-12 bg-white rounded-lg -mx-4 px-4">
+      <h3 className="text-center text-xl font-bold text-gray-800 mb-8">Our Partners</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {partners.map((partner, index) => (
           <div key={index} className="flex flex-col items-center text-center space-y-4">
-            <div className="w-full h-32 flex items-center justify-center">
+            <div className="w-full h-32 flex items-center justify-center bg-gray-50 rounded-lg p-4">
               <img
                 src={partner.logo}
                 alt={partner.name}
@@ -63,7 +64,7 @@ export default function Partners() {
                 loading="lazy"
               />
             </div>
-            <h6 className="text-white font-semibold text-sm">
+            <h6 className="text-gray-800 font-semibold text-sm">
               {partner.name}
             </h6>
             <a
