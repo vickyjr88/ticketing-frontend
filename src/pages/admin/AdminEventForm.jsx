@@ -202,10 +202,10 @@ export default function AdminEventForm() {
     };
 
     const handleTierChange = (e) => {
-        const { name, value, type } = e.target;
+        const { name, value } = e.target;
         setNewTier(prev => ({
             ...prev,
-            [name]: type === 'number' ? parseFloat(value) || '' : value
+            [name]: value
         }));
     };
 
