@@ -21,7 +21,8 @@ import {
     TrendingUp,
     BarChart3,
     X,
-    UserMinus
+    UserMinus,
+    Copy
 } from 'lucide-react';
 
 import { api } from '../../services/api';
@@ -657,21 +658,48 @@ export default function AdminEventForm() {
                             </div>
 
                             {formData.visibility === 'PRIVATE' && (
-                                <div className="form-group">
-                                    <label htmlFor="access_code">
-                                        Access Code (Required for Private Events)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="access_code"
-                                        name="access_code"
-                                        value={formData.access_code}
-                                        onChange={handleChange}
-                                        placeholder="e.g. SECRET123"
-                                        className="font-mono"
-                                    />
-                                    <p className="form-hint">Users must enter this code to view and book the event.</p>
-                                </div>
+                                <>
+                                    <div className="form-group">
+                                        <label htmlFor="access_code">
+                                            Access Code (Required for Private Events)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="access_code"
+                                            name="access_code"
+                                            value={formData.access_code}
+                                            onChange={handleChange}
+                                            placeholder="e.g. SECRET123"
+                                            className="font-mono"
+                                        />
+                                        <p className="form-hint">Users must enter this code to view and book the event.</p>
+                                    </div>
+
+                                    {id && (
+                                        <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                            <h3 className="text-sm font-semibold text-purple-900 mb-2">Share Invite</h3>
+                                            <p className="text-sm text-purple-700 mb-3">Copy this message to invite guests:</p>
+
+                                            <div className="bg-white p-3 rounded border border-purple-100 text-sm font-mono text-gray-600 mb-3 break-all">
+                                                You're invited to {formData.title}!<br />
+                                                Link: {window.location.origin}/events/{id}<br />
+                                                Access Code: {formData.access_code}
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const text = `You're invited to ${formData.title}!\nLink: ${window.location.origin}/events/${id}\nAccess Code: ${formData.access_code}`;
+                                                    navigator.clipboard.writeText(text);
+                                                    alert('Invite copied to clipboard!');
+                                                }}
+                                                className="text-sm font-medium text-purple-600 hover:text-purple-800 flex items-center gap-1"
+                                            >
+                                                <Copy className="w-4 h-4" /> Copy Invite Message
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
 
