@@ -533,7 +533,9 @@ export default function EventDetails() {
                 <p className="font-semibold text-gray-900">
                   {cartItemCount} item{cartItemCount > 1 ? 's' : ''} in cart
                 </p>
-                <p className="text-2xl font-bold text-blue-600">KES {cartTotal.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {total === 0 ? 'FREE' : `KES ${total.toLocaleString()}`}
+                </p>
               </div>
             </div>
             <button
