@@ -20,6 +20,7 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import ContactUs from './pages/ContactUs';
 import AboutUs from './pages/AboutUs';
+import LayawayOrders from './pages/LayawayOrders';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -116,6 +117,9 @@ function Layout({ children }) {
                   </Link>
                   <Link to="/my-orders" className="text-gray-700 hover:text-blue-600 font-medium">
                     My Orders
+                  </Link>
+                  <Link to="/layaway" className="text-green-600 hover:text-green-700 font-medium">
+                    Lipa Pole Pole
                   </Link>
                   <div className="flex items-center gap-2">
                     <Link to="/profile" className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
@@ -292,6 +296,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/layaway"
+              element={
+                <ProtectedRoute>
+                  <LayawayOrders />
                 </ProtectedRoute>
               }
             />

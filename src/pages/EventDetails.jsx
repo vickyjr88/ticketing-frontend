@@ -107,7 +107,12 @@ export default function EventDetails() {
     });
 
     navigate('/checkout', {
-      state: { eventId: id, items, event },
+      state: {
+        eventId: id,
+        items,
+        event,
+        allowsLayaway: event?.allows_layaway || false,
+      },
     });
   };
 

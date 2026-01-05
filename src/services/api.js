@@ -669,6 +669,42 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // ==================== LIPA POLE POLE (LAYAWAY) ====================
+
+  async createLayawayOrder(data) {
+    return this.request('/layaway/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getLayawayOrders(page = 1, limit = 20, status = null) {
+    const params = new URLSearchParams({ page, limit });
+    if (status) params.append('status', status);
+    return this.request(`/layaway/orders?${params}`);
+  }
+
+  async getLayawayOrder(orderId) {
+    return this.request(`/layaway/orders/${orderId}`);
+  }
+
+  async getLayawayPaymentHistory(orderId) {
+    return this.request(`/layaway/orders/${orderId}/payments`);
+  }
+
+  async topUpLayawayOrder(orderId, data) {
+    return this.request(`/layaway/orders/${orderId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelLayawayOrder(orderId) {
+    return this.request(`/layaway/orders/${orderId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiService();

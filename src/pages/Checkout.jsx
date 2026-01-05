@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { CreditCard, Smartphone, Check, AlertCircle, Tag, X, Loader, Plus, Minus } from 'lucide-react';
+import { CreditCard, Smartphone, Check, AlertCircle, Tag, X, Loader, Plus, Minus, Wallet } from 'lucide-react';
 
 export default function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { eventId, items = [], event, products: initialProducts = {} } = location.state || {};
+  const { eventId, items = [], event, products: initialProducts = {}, allowsLayaway = false } = location.state || {};
 
   const [paymentProvider, setPaymentProvider] = useState('MPESA');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -15,6 +15,10 @@ export default function Checkout() {
   const [error, setError] = useState('');
   const [order, setOrder] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, failed
+
+  // Lipa Pole Pole (Layaway) state
+  const [paymentMode, setPaymentMode] = useState('full'); // 'full' or 'layaway'
+  const [initialAmount, setInitialAmount] = useState('');
 
   // Promo code state
   const [promoCode, setPromoCode] = useState('');
@@ -150,7 +154,13 @@ export default function Checkout() {
     setError('');
 
     try {
-      // Create order with optional promo code
+      // Check if using Lipa Pole Pole mode
+      if (paymentMode === 'layaway') {
+        await handleLayawayCheckout();
+        return;
+      }
+
+      // Regular full payment checkout
       const orderData = await api.checkout({
         eventId,
         items: items.map(({ tierId, quantity }) => ({ tierId, quantity })),
@@ -200,6 +210,66 @@ export default function Checkout() {
       setError(err.message || 'Checkout failed');
       setPaymentStatus('failed');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLayawayCheckout = async () => {
+    const total = calculateTotal();
+    const amount = parseFloat(initialAmount);
+
+    // Validate initial amount
+    if (!amount || amount <= 0) {
+      setError('Please enter a valid initial payment amount');
+      setLoading(false);
+      return;
+    }
+
+    const minPayment = Math.max(100, total * 0.1);
+    if (amount < minPayment) {
+      setError(`Minimum initial payment is KES ${Math.ceil(minPayment)}`);
+      setLoading(false);
+      return;
+    }
+
+    if (amount >= total) {
+      setError('Initial payment must be less than total. Use regular checkout for full payment.');
+      setLoading(false);
+      return;
+    }
+
+    if (paymentProvider === 'MPESA' && (!phoneNumber || phoneNumber.length < 10)) {
+      setError('Please enter a valid phone number');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const result = await api.createLayawayOrder({
+        eventId,
+        items: items.map(({ tierId, quantity }) => ({ tierId, quantity })),
+        products: Object.entries(selectedProducts).map(([productId, quantity]) => ({ productId, quantity })),
+        initialAmount: amount,
+        paymentProvider,
+        phoneNumber: paymentProvider === 'MPESA' ? phoneNumber : undefined,
+        promoCode: promoApplied?.code || undefined,
+      });
+
+      // Handle payment redirect
+      if (result?.paymentData?.data?.authorization_url) {
+        // Paystack redirect
+        window.location.href = result.paymentData.data.authorization_url;
+      } else if (paymentProvider === 'MPESA') {
+        // M-Pesa STK push initiated
+        setPaymentStatus('processing');
+        alert('Check your phone for the M-Pesa payment prompt. After payment, you can track your order in Lipa Pole Pole.');
+        navigate('/layaway');
+      } else {
+        // Success, redirect to layaway page
+        navigate('/layaway');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to create layaway order');
       setLoading(false);
     }
   };
@@ -397,7 +467,75 @@ export default function Checkout() {
 
         {/* Payment Method */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Method</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment</h2>
+
+          {/* Payment Mode Selector - Only show if event allows layaway */}
+          {allowsLayaway && paymentStatus === 'idle' && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                How would you like to pay?
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('full')}
+                  className={`p-4 border-2 rounded-lg text-center transition-all ${paymentMode === 'full'
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                >
+                  <CreditCard className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <span className="font-semibold block">Pay Now</span>
+                  <span className="text-xs text-gray-500">Full payment</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMode('layaway')}
+                  className={`p-4 border-2 rounded-lg text-center transition-all ${paymentMode === 'layaway'
+                      ? 'border-green-600 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                >
+                  <Wallet className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <span className="font-semibold block">Lipa Pole Pole</span>
+                  <span className="text-xs text-gray-500">Pay in installments</span>
+                </button>
+              </div>
+
+              {paymentMode === 'layaway' && (
+                <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <label className="block text-sm font-medium text-green-800 mb-2">
+                    Initial Payment Amount (KES)
+                  </label>
+                  <input
+                    type="number"
+                    value={initialAmount}
+                    onChange={(e) => setInitialAmount(e.target.value)}
+                    min={Math.ceil(Math.max(100, total * 0.1))}
+                    max={total - 1}
+                    placeholder={`Min: KES ${Math.ceil(Math.max(100, total * 0.1))}`}
+                    className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                  <p className="text-xs text-green-700 mt-2">
+                    Pay at least KES {Math.ceil(Math.max(100, total * 0.1)).toLocaleString()} now,
+                    then complete payment before the event. Tickets will be issued when fully paid.
+                  </p>
+                  {initialAmount && (
+                    <div className="mt-3 p-3 bg-white rounded border border-green-200">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Pay Today:</span>
+                        <span className="font-semibold text-green-700">KES {parseFloat(initialAmount || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Balance Due:</span>
+                        <span className="font-semibold text-orange-600">KES {(total - parseFloat(initialAmount || 0)).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {paymentStatus === 'idle' && (
             <div className="bg-white rounded-lg shadow-md p-6">

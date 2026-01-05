@@ -48,7 +48,8 @@ export default function AdminEventForm() {
         status: 'DRAFT',
         banner_image_url: '',
         lottery_enabled: false,
-        lottery_draw_date: ''
+        lottery_draw_date: '',
+        allows_layaway: false
     });
 
     const [editingTierId, setEditingTierId] = useState(null);
@@ -168,7 +169,8 @@ export default function AdminEventForm() {
                 status: event.status || 'DRAFT',
                 banner_image_url: event.banner_image_url || '',
                 lottery_enabled: event.lottery_enabled || false,
-                lottery_draw_date: formatDateTime(event.lottery_draw_date)
+                lottery_draw_date: formatDateTime(event.lottery_draw_date),
+                allows_layaway: event.allows_layaway || false
             });
 
             if (event.ticket_tiers) {
@@ -648,6 +650,27 @@ export default function AdminEventForm() {
                                     />
                                 </div>
                             )}
+                        </div>
+
+                        <div className="form-section">
+                            <h2 className="section-title">
+                                <span className="text-green-600">💳</span>
+                                Lipa Pole Pole (Installment Payments)
+                            </h2>
+
+                            <div className="form-group checkbox-group">
+                                <label className="checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        name="allows_layaway"
+                                        checked={formData.allows_layaway}
+                                        onChange={handleChange}
+                                    />
+                                    <span className="checkmark"></span>
+                                    Enable Lipa Pole Pole for this event
+                                </label>
+                                <p className="form-hint">Allow customers to pay for tickets in installments. Tickets are issued only when fully paid.</p>
+                            </div>
                         </div>
 
                         <div className="form-actions">
