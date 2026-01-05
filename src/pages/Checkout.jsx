@@ -52,9 +52,13 @@ export default function Checkout() {
       return;
     }
 
-    // Fetch products
+    // Fetch products - API returns paginated result { data: Product[], meta: {...} }
     api.getProducts(eventId)
-      .then(setAvailableProducts)
+      .then(response => {
+        // Handle both paginated response and direct array
+        const products = Array.isArray(response) ? response : (response.data || []);
+        setAvailableProducts(products);
+      })
       .catch(err => console.error('Failed to fetch products:', err));
   }, [eventId, items, navigate]);
 

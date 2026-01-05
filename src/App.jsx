@@ -170,7 +170,7 @@ function Layout({ children }) {
           <div className="text-center text-gray-600">
             <p className="mb-2">&copy; 2024 Home Run with Pipita. All rights reserved.</p>
             <p className="text-sm">
-              Powered by <a href="https://vitaldigitalmedia.net/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">VDM Digital Agency</a>
+              Powered by <a href="https://vitaldigitalmedia.net/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-600 hover:text-blue-800 transition-colors">Vital Digital Media</a>
             </p>
           </div>
         </div>

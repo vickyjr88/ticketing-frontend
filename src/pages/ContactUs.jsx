@@ -100,7 +100,7 @@ function ContactUs() {
                             <Mail size={24} />
                         </div>
                         <h3>Email Us</h3>
-                        <p>support@pipita.co.ke</p>
+                        <p>shengmtaa@gmail.com</p>
                         <span className="info-detail">We reply within 24 hours</span>
                     </div>
 
@@ -109,7 +109,7 @@ function ContactUs() {
                             <Phone size={24} />
                         </div>
                         <h3>Call Us</h3>
-                        <p>+254 700 000 000</p>
+                        <p>+254 747 206 415</p>
                         <span className="info-detail">Mon-Fri, 9am-6pm EAT</span>
                     </div>
 

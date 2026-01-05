@@ -105,7 +105,7 @@ export default function LandingPage() {
                 </div>
                 {/* Footer  */}
                 <div className="absolute bottom-4 w-full text-center z-20 text-gray-400 text-sm">
-                    Powered by <a href="https://vitaldigitalmedia.net/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">VDM Digital Agency</a>
+                    Powered by <a href="https://vitaldigitalmedia.net/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">Vital Digital Media</a>
                 </div>
             </div>
         </div>

@@ -73,8 +73,10 @@ export default function AdminGates() {
 
     const loadEvents = async () => {
         try {
-            const data = await api.getAllEventsAdmin(1, 100);
-            setEvents(data?.events || data || []);
+            const response = await api.getAllEventsAdmin(1, 100);
+            // API returns paginated result { data: Event[], meta: {...} }
+            const eventsList = response?.data || response?.events || response || [];
+            setEvents(Array.isArray(eventsList) ? eventsList : []);
         } catch (err) {
             console.error('Failed to load events:', err);
         }
