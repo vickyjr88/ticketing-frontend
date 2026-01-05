@@ -70,7 +70,7 @@ export default function Partners() {
               href={partner.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+              className="inline-block px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
             >
               {partner.buttonText}
             </a>
