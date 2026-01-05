@@ -56,7 +56,7 @@ export default function Partners() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {partners.map((partner, index) => (
           <div key={index} className="flex flex-col items-center text-center space-y-4">
-            <div className="w-full h-32 flex items-center justify-center bg-gray-50 rounded-lg p-4">
+            <div className="w-full h-32 flex items-center justify-center bg-gray-50 rounded-lg">
               <img
                 src={partner.logo}
                 alt={partner.name}
