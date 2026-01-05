@@ -171,6 +171,18 @@ export default function Checkout() {
 
       setOrder(orderData.order);
 
+      setOrder(orderData.order);
+
+      // Handle Free Orders
+      if (orderData.paymentRequired === false) {
+        setPaymentStatus('success');
+        setTimeout(() => {
+          navigate('/my-tickets');
+        }, 2000);
+        setLoading(false);
+        return;
+      }
+
       // Initiate payment
       if (paymentProvider === 'MPESA') {
         if (!phoneNumber || phoneNumber.length < 10) {
@@ -480,8 +492,8 @@ export default function Checkout() {
                   type="button"
                   onClick={() => setPaymentMode('full')}
                   className={`p-4 border-2 rounded-lg text-center transition-all ${paymentMode === 'full'
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-blue-600 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   <CreditCard className="w-6 h-6 mx-auto mb-2 text-blue-600" />
@@ -492,8 +504,8 @@ export default function Checkout() {
                   type="button"
                   onClick={() => setPaymentMode('layaway')}
                   className={`p-4 border-2 rounded-lg text-center transition-all ${paymentMode === 'layaway'
-                      ? 'border-green-600 bg-green-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-green-600 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                 >
                   <Wallet className="w-6 h-6 mx-auto mb-2 text-green-600" />
@@ -624,39 +636,67 @@ export default function Checkout() {
                 </div>
               )}
 
-              {/* M-Pesa Phone Number */}
-              {paymentProvider === 'MPESA' && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    M-Pesa Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="0712345678"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    You will receive an STK push to complete the payment
-                  </p>
-                </div>
-              )}
+              {/* Free Order Confirmation */}
+              {total <= 0 ? (
+                <div className="text-center p-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Free Order</h3>
+                  <p className="text-gray-600 mb-6">No payment required. Confirm to receive your tickets.</p>
 
-              {error && (
-                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700">
-                  <AlertCircle className="w-5 h-5" />
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
+                  {error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700 text-left">
+                      <AlertCircle className="w-5 h-5" />
+                      <span className="text-sm">{error}</span>
+                    </div>
+                  )}
 
-              <button
-                onClick={handleCheckout}
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Processing...' : `Pay KES ${total.toLocaleString()}`}
-              </button>
+                  <button
+                    onClick={handleCheckout}
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Processing...' : 'Confirm RSVP'}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* M-Pesa Phone Number */}
+                  {paymentProvider === 'MPESA' && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        M-Pesa Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="0712345678"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        You will receive an STK push to complete the payment
+                      </p>
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700">
+                      <AlertCircle className="w-5 h-5" />
+                      <span className="text-sm">{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleCheckout}
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Processing...' : `Pay KES ${total.toLocaleString()}`}
+                  </button>
+                </>
+              )}
             </div>
           )}
 

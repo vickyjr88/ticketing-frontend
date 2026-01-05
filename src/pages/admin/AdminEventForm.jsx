@@ -49,7 +49,9 @@ export default function AdminEventForm() {
         banner_image_url: '',
         lottery_enabled: false,
         lottery_draw_date: '',
-        allows_layaway: false
+        allows_layaway: false,
+        visibility: 'PUBLIC',
+        access_code: ''
     });
 
     const [editingTierId, setEditingTierId] = useState(null);
@@ -170,7 +172,9 @@ export default function AdminEventForm() {
                 banner_image_url: event.banner_image_url || '',
                 lottery_enabled: event.lottery_enabled || false,
                 lottery_draw_date: formatDateTime(event.lottery_draw_date),
-                allows_layaway: event.allows_layaway || false
+                allows_layaway: event.allows_layaway || false,
+                visibility: event.visibility || 'PUBLIC',
+                access_code: event.access_code || ''
             });
 
             if (event.ticket_tiers) {
@@ -620,6 +624,59 @@ export default function AdminEventForm() {
 
                         <div className="form-section">
                             <h2 className="section-title">
+                                <span className="text-purple-600">🔒</span>
+                                Privacy & Access (Private Parties)
+                            </h2>
+
+                            <div className="form-group">
+                                <label>Event Visibility</label>
+                                <div className="flex gap-4 mt-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            value="PUBLIC"
+                                            checked={formData.visibility === 'PUBLIC'}
+                                            onChange={handleChange}
+                                            className="w-4 h-4 text-blue-600"
+                                        />
+                                        <span>Public (Listed on events feed)</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="visibility"
+                                            value="PRIVATE"
+                                            checked={formData.visibility === 'PRIVATE'}
+                                            onChange={handleChange}
+                                            className="w-4 h-4 text-purple-600"
+                                        />
+                                        <span>Private (Hidden, Access Code required)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {formData.visibility === 'PRIVATE' && (
+                                <div className="form-group">
+                                    <label htmlFor="access_code">
+                                        Access Code (Required for Private Events)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="access_code"
+                                        name="access_code"
+                                        value={formData.access_code}
+                                        onChange={handleChange}
+                                        placeholder="e.g. SECRET123"
+                                        className="font-mono"
+                                    />
+                                    <p className="form-hint">Users must enter this code to view and book the event.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="form-section">
+                            <h2 className="section-title">
                                 <Gift className="w-5 h-5" />
                                 Lottery Settings
                             </h2>
@@ -843,7 +900,7 @@ export default function AdminEventForm() {
                                                     {tier.category}
                                                 </span>
                                                 <h4>{tier.name}</h4>
-                                                <p>{formatCurrency(tier.price)} × {tier.tickets_per_unit} ticket(s)</p>
+                                                <p>{Number(tier.price) === 0 ? <span className="text-green-600 font-bold">FREE</span> : formatCurrency(tier.price)} × {tier.tickets_per_unit} ticket(s)</p>
                                             </div>
                                             <div className="tier-stats-actions">
                                                 <span className="tier-availability">

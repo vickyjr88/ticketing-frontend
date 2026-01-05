@@ -104,6 +104,12 @@ export default function Events() {
         {event.banner_image_url && (
           <div className="event-image">
             <img src={event.banner_image_url} alt={event.title} />
+            {minPrice === 0 && (
+              <div className="entered-badge bg-green-500">
+                <Ticket className="w-4 h-4" />
+                <span>FREE</span>
+              </div>
+            )}
             {event.lottery_enabled && (
               <div className="lottery-badge">
                 <Gift className="w-4 h-4" />
@@ -141,12 +147,16 @@ export default function Events() {
           )}
 
           <div className="event-footer">
-            {minPrice && (
-              <div className="price">
-                <Ticket className="w-4 h-4" />
+            <div className="price">
+              <Ticket className="w-4 h-4" />
+              {minPrice === 0 ? (
+                <span className="text-green-600 font-bold">FREE ENTRY</span>
+              ) : minPrice !== null ? (
                 <span>From {formatCurrency(minPrice)}</span>
-              </div>
-            )}
+              ) : (
+                <span>Price TBA</span>
+              )}
+            </div>
 
             <button className="btn-view">View Details</button>
           </div>

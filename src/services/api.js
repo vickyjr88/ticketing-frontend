@@ -157,6 +157,13 @@ class ApiService {
     return this.request(`/events/${id}/feature`, { method: 'POST' });
   }
 
+  async verifyEventAccess(id, accessCode) {
+    return this.request(`/events/${id}/verify-access`, {
+      method: 'POST',
+      body: JSON.stringify({ accessCode }),
+    });
+  }
+
   async createTier(eventId, tierData) {
     return this.request(`/events/${eventId}/tiers`, {
       method: 'POST',

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MapPin, Clock, Users, Gift, ShoppingCart, Bell } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Gift, ShoppingCart, Bell, Lock, Unlock, ArrowRight } from 'lucide-react';
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -21,6 +21,12 @@ export default function EventDetails() {
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [joiningWaitlist, setJoiningWaitlist] = useState(false);
 
+  // Private Event State
+  const [isLocked, setIsLocked] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [verifyingAccess, setVerifyingAccess] = useState(false);
+  const [accessError, setAccessError] = useState('');
+
   useEffect(() => {
     loadEventData();
   }, [id]);
@@ -33,7 +39,17 @@ export default function EventDetails() {
       ]);
 
       setEvent(eventData);
+      setEvent(eventData);
       setTiers(tiersData);
+
+      // Check for private event access
+      if (eventData.visibility === 'PRIVATE') {
+        const unlockedEvents = JSON.parse(localStorage.getItem('unlocked_events') || '{}');
+        // If not unlocked, set locked state
+        if (!unlockedEvents[id]) {
+          setIsLocked(true);
+        }
+      }
 
       if (eventData.lottery_enabled) {
         const stats = await api.getLotteryStats(id);
@@ -153,6 +169,30 @@ export default function EventDetails() {
     setShowWaitlistModal(true);
   };
 
+  const verifyAccessCode = async (e) => {
+    e.preventDefault();
+    setVerifyingAccess(true);
+    setAccessError('');
+
+    try {
+      const result = await api.verifyEventAccess(id, accessCode);
+      if (result.valid) {
+        // Store unlock status
+        const unlockedEvents = JSON.parse(localStorage.getItem('unlocked_events') || '{}');
+        unlockedEvents[id] = true;
+        localStorage.setItem('unlocked_events', JSON.stringify(unlockedEvents));
+        setIsLocked(false);
+      } else {
+        setAccessError('Invalid access code. Please try again.');
+      }
+    } catch (error) {
+      console.error('Access verification failed:', error);
+      setAccessError('Failed to verify code. Please try again.');
+    } finally {
+      setVerifyingAccess(false);
+    }
+  };
+
   const handleJoinWaitlist = async (e) => {
     e.preventDefault();
     if (!waitlistEmail || !waitlistTier) return;
@@ -216,7 +256,77 @@ export default function EventDetails() {
     );
   }
 
-  const cartTotal = calculateTotal();
+  const total = calculateTotal();
+
+  // Locked Screen
+  if (isLocked && event) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-purple-900 p-8 text-center">
+            <div className="mx-auto w-16 h-16 bg-purple-800 rounded-full flex items-center justify-center mb-4">
+              <Lock className="w-8 h-8 text-purple-200" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Private Party</h2>
+            <p className="text-purple-200">This event is invite-only.</p>
+          </div>
+
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <h3 className="font-semibold text-gray-900 text-lg">{event.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">{new Date(event.start_date).toLocaleDateString()}</p>
+            </div>
+
+            <form onSubmit={verifyAccessCode} className="space-y-4">
+              <div>
+                <label htmlFor="accessCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Enter Access Code
+                </label>
+                <input
+                  type="text"
+                  id="accessCode"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center font-mono text-lg tracking-widest uppercase"
+                  placeholder="ENTER CODE"
+                  required
+                />
+              </div>
+
+              {accessError && (
+                <p className="text-red-600 text-sm text-center bg-red-50 p-2 rounded">
+                  {accessError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={verifyingAccess || !accessCode}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {verifyingAccess ? (
+                  'Verifying...'
+                ) : (
+                  <>
+                    Unlock Event <Unlock className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => navigate('/events')}
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Back to Public Events
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const cartItemCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 
   return (
