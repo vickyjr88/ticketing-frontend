@@ -27,6 +27,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminEvents from './pages/admin/AdminEvents';
 import AdminEventForm from './pages/admin/AdminEventForm';
+import EventLiveDashboard from './pages/admin/EventLiveDashboard';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminScanner from './pages/admin/AdminScanner';
@@ -192,127 +193,130 @@ function Layout({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="events" element={<AdminEvents />} />
-            <Route path="events/new" element={<AdminEventForm />} />
-            <Route path="events/:id/edit" element={<AdminEventForm />} />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="scanner" element={<AdminScanner />} />
-            <Route path="lottery" element={<AdminLottery />} />
-            <Route path="promo-codes" element={<AdminPromoCodes />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="media" element={<AdminMediaLibrary />} />
-            <Route path="payments" element={<AdminPaymentSettings />} />
-            <Route path="gates" element={<AdminGates />} />
-            <Route path="contacts" element={<AdminContacts />} />
-          </Route>
+      <SocketProvider>
+        <Router>
+          <Routes>
+            {/* Admin Routes */}
+            < Route
+              path="/admin"
+              element={
+                < AdminRoute >
+                  <AdminLayout />
+                </AdminRoute >
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="events/new" element={<AdminEventForm />} />
+              <Route path="events/:id/edit" element={<AdminEventForm />} />
+              <Route path="events/:id/live" element={<EventLiveDashboard />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="scanner" element={<AdminScanner />} />
+              <Route path="lottery" element={<AdminLottery />} />
+              <Route path="promo-codes" element={<AdminPromoCodes />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="media" element={<AdminMediaLibrary />} />
+              <Route path="payments" element={<AdminPaymentSettings />} />
+              <Route path="gates" element={<AdminGates />} />
+              <Route path="contacts" element={<AdminContacts />} />
+            </Route >
 
-          {/* User Dashboard Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <UserLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard/events" replace />} />
-            <Route path="events" element={<UserEvents />} />
-            <Route path="events/new" element={<UserEventForm />} />
-            <Route path="events/:id/edit" element={<UserEventForm />} />
-          </Route>
+            {/* User Dashboard Routes */}
+            < Route
+              path="/dashboard"
+              element={
+                < ProtectedRoute >
+                  <UserLayout />
+                </ProtectedRoute >
+              }
+            >
+              <Route index element={<Navigate to="/dashboard/events" replace />} />
+              <Route path="events" element={<UserEvents />} />
+              <Route path="events/new" element={<UserEventForm />} />
+              <Route path="events/:id/edit" element={<UserEventForm />} />
+            </Route >
 
-          {/* Public & User Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route element={<Layout><Outlet /></Layout>}>
-            {/* Redirect /events/ to /events? moved root to LandingPage */}
-            {/* <Route path="/" element={<Navigate to="/events" replace />} /> */}
-            <Route path="/events" element={<Events />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/contact" element={<ContactUs />} />
-            <Route path="/about" element={<AboutUs />} />
+            {/* Public & User Routes */}
+            < Route path="/" element={< LandingPage />} />
+            < Route element={< Layout > <Outlet /></Layout >}>
+              {/* Redirect /events/ to /events? moved root to LandingPage */}
+              {/* <Route path="/" element={<Navigate to="/events" replace />} /> */}
+              <Route path="/events" element={<Events />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/events/:id" element={<EventDetails />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/contact" element={<ContactUs />} />
+              <Route path="/about" element={<AboutUs />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute>
-                  <Checkout />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/adopt"
-              element={
-                <ProtectedRoute>
-                  <Adopt />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/paystack/callback"
-              element={
-                <ProtectedRoute>
-                  <PaystackCallback />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-tickets"
-              element={
-                <ProtectedRoute>
-                  <MyTickets />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/my-orders"
-              element={
-                <ProtectedRoute>
-                  <MyOrders />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/layaway"
-              element={
-                <ProtectedRoute>
-                  <LayawayOrders />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes */}
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <Checkout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/adopt"
+                element={
+                  <ProtectedRoute>
+                    <Adopt />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/paystack/callback"
+                element={
+                  <ProtectedRoute>
+                    <PaystackCallback />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-tickets"
+                element={
+                  <ProtectedRoute>
+                    <MyTickets />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-orders"
+                element={
+                  <ProtectedRoute>
+                    <MyOrders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/layaway"
+                element={
+                  <ProtectedRoute>
+                    <LayawayOrders />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Catch all - redirect to events */}
-            <Route path="*" element={<Navigate to="/events" replace />} />
-          </Route>
-        </Routes>
-      </Router>
+              {/* Catch all - redirect to events */}
+              <Route path="*" element={<Navigate to="/events" replace />} />
+            </Route >
+          </Routes >
+        </Router>
+      </SocketProvider>
     </AuthProvider>
   );
 }

@@ -21,7 +21,8 @@ import {
 
     Bell,
     BarChart,
-    Star
+    Star,
+    Activity
 } from 'lucide-react';
 import { api } from '../../services/api';
 import Pagination from '../../components/Pagination';
@@ -371,6 +372,9 @@ export default function AdminEvents() {
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
+                                <Link to={`/admin/events/${event.id}/live`} className="action-btn view" title="Live Dashboard">
+                                    <Activity className="w-4 h-4" />
+                                </Link>
                                 <button
                                     className="action-btn view"
                                     title="View Waitlist"
