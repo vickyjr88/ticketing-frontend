@@ -278,6 +278,20 @@ class ApiService {
     });
   }
 
+  async getGateStats(eventId) {
+    return this.request(`/tickets/scanner/stats/${eventId}`);
+  }
+
+  async getEventOrders(eventId, page = 1, limit = 100) {
+    const params = new URLSearchParams({ page, limit, eventId });
+    return this.request(`/orders?${params}`);
+  }
+
+  async getEventCheckIns(eventId, limit = 50) {
+    // Get recently checked-in tickets for this event
+    return this.request(`/tickets/event/${eventId}/check-ins?limit=${limit}`);
+  }
+
   // Lottery Methods
   async getEventLotteryEntries(eventId) {
     return this.request(`/lottery/event/${eventId}/entries`);

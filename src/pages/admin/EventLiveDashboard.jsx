@@ -59,14 +59,47 @@ export default function EventLiveDashboard() {
         try {
             const eventData = await api.getEvent(id);
             setEvent(eventData);
-            // Fetch initial stats (check-in count, etc.) from API
-            // const statsData = await api.getEventStats(id); 
-            // setStats(statsData);
-            // For now, mock or calculate from event data if available
-            setStats(prev => ({
-                ...prev,
-                capacity: eventData.ticket_tiers?.reduce((sum, t) => sum + t.initial_quantity, 0) || 0
-            }));
+
+            // Calculate capacity from tiers
+            const capacity = eventData.ticket_tiers?.reduce((sum, t) => sum + t.initial_quantity, 0) || 0;
+
+            // Fetch gate stats to get total check-in count
+            const gateStats = await api.getGateStats(id).catch(() => []);
+            const totalCheckIns = gateStats.reduce((sum, g) => sum + (parseInt(g.count) || 0), 0);
+
+            // Get event revenue from order totals
+            let revenue = 0;
+            try {
+                const orders = await api.getEventOrders(id);
+                if (orders?.data) {
+                    revenue = orders.data.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
+                }
+            } catch (e) {
+                console.log('Could not fetch orders for revenue');
+            }
+
+            setStats({
+                totalCheckIns,
+                revenue,
+                gateStats,
+                capacity
+            });
+
+            // Load recent check-in activity for this event
+            try {
+                const recentActivity = await api.getEventCheckIns(id, 20).catch(() => ({ data: [] }));
+                if (recentActivity?.data) {
+                    const initialLogs = recentActivity.data.map((ticket, i) => ({
+                        id: ticket.id || `init-${i}`,
+                        message: `${ticket.holder?.first_name || 'Guest'} checked in at ${ticket.checked_in_gate || 'gate'}`,
+                        timestamp: new Date(ticket.checked_in_at),
+                        type: 'check-in'
+                    }));
+                    setLogs(initialLogs.slice(0, 50));
+                }
+            } catch (e) {
+                console.log('Could not fetch recent check-ins:', e);
+            }
         } catch (err) {
             console.error(err);
         }
