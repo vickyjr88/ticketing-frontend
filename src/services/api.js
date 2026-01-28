@@ -20,7 +20,17 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+
+      let data = {};
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+      } else {
+        // Handle non-json or empty response
+        const text = await response.text();
+        data = text ? { message: text } : {};
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Request failed');
