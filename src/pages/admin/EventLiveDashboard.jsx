@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import { api } from '../../services/api';
-import { Users, CreditCard, Activity, MapPin } from 'lucide-react';
+import { Users, CreditCard, Activity, MapPin, Download } from 'lucide-react';
 
 export default function EventLiveDashboard() {
     const { id } = useParams();
@@ -15,6 +15,7 @@ export default function EventLiveDashboard() {
         capacity: 0
     });
     const [logs, setLogs] = useState([]);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         loadEventData();
@@ -105,14 +106,81 @@ export default function EventLiveDashboard() {
         }
     };
 
+    const csvCell = (value) => {
+        const text = value == null ? '' : String(value);
+        if (/[",\n]/.test(text)) {
+            return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
+    };
+
+    const downloadHolders = async () => {
+        try {
+            setDownloading(true);
+            const holders = await api.getEventTicketHolders(id);
+            const rows = Array.isArray(holders) ? holders : [];
+            const header = [
+                'Holder Name',
+                'Email',
+                'Phone',
+                'Ticket ID',
+                'Tier',
+                'Ticket Type',
+                'Used',
+                'Checked In At',
+                'Gate',
+            ];
+            const body = rows.map((row) => [
+                csvCell(row.holder_name),
+                csvCell(row.holder_email),
+                csvCell(row.holder_phone),
+                csvCell(row.ticket_id),
+                csvCell(row.tier),
+                csvCell(row.ticket_type),
+                csvCell(row.used_label || (row.used ? 'Yes' : 'No')),
+                csvCell(row.checked_in_at ? new Date(row.checked_in_at).toLocaleString('en-KE') : ''),
+                csvCell(row.checked_in_gate),
+            ].join(','));
+            const csv = `\uFEFF${header.join(',')}\n${body.join('\n')}`;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const slug = (event.title || 'event').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+            link.href = url;
+            link.download = `${slug}-ticket-holders.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Failed to download ticket holders:', err);
+            alert(err.message || 'Failed to download ticket holders');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     if (!event) return <div className="p-8">Loading...</div>;
 
     const percentage = stats.capacity > 0 ? Math.round((stats.totalCheckIns / stats.capacity) * 100) : 0;
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold mb-2">{event.title} - Live Dashboard</h1>
-            <p className="text-gray-500 mb-8">Real-time monitoring</p>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">{event.title} - Live Dashboard</h1>
+                    <p className="text-gray-500">Real-time monitoring</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={downloadHolders}
+                    disabled={downloading}
+                    className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                >
+                    <Download className="w-4 h-4" />
+                    {downloading ? 'Preparing…' : 'Download ticket holders'}
+                </button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 {/* Check-in Counter */}
