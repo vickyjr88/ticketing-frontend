@@ -1712,6 +1712,36 @@ body.nav-lock {
   font-size: 1.25rem;
 }
 
+.user-detail-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.user-detail-list > div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.user-detail-list dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 0.15rem;
+}
+
+.user-detail-list dd {
+  margin: 0;
+  color: #111827;
+  font-size: 0.9375rem;
+  word-break: break-word;
+}
+
 .role-selector label {
   display: block;
   font-weight: 500;
@@ -4145,6 +4175,11 @@ body.nav-lock {
 
   .modal-actions {
     flex-direction: column-reverse;
+  }
+
+  .user-detail-list > div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
   }
 
   .pagination {

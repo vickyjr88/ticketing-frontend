@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
     Users,
     Search,
-    Shield,
     ShieldCheck,
     ShieldAlert,
     User,
@@ -18,7 +17,8 @@ import {
     MapPin,
     Plus,
     KeyRound,
-    RefreshCw
+    RefreshCw,
+    Eye
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -30,13 +30,26 @@ export default function AdminUsers() {
     const [roleFilter, setRoleFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [counts, setCounts] = useState({ total: 0, USER: 0, ADMIN: 0, SCANNER: 0 });
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
-    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [assignedGate, setAssignedGate] = useState('');
     const [success, setSuccess] = useState(null);
+    const [editForm, setEditForm] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone_number: '',
+        role: 'USER',
+        assigned_gate: '',
+        is_active: true,
+    });
+    const PAGE_SIZE = 15;
     const emptyCreateForm = {
         email: '',
         password: '',
@@ -62,29 +75,63 @@ export default function AdminUsers() {
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+            setCurrentPage(1);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    useEffect(() => {
         loadUsers();
-    }, [currentPage, roleFilter]);
+    }, [currentPage, roleFilter, debouncedSearch]);
 
     const loadUsers = async () => {
         try {
             setLoading(true);
             const params = {
                 page: currentPage,
-                limit: 15
+                limit: PAGE_SIZE,
             };
 
             if (roleFilter !== 'all') {
                 params.role = roleFilter.toUpperCase();
             }
+            if (debouncedSearch) {
+                params.search = debouncedSearch;
+            }
             const data = await api.getAdminUsers(params);
-            setUsers(data?.users || data || []);
+            setUsers(data?.users || []);
             setTotalPages(data?.totalPages || 1);
+            setTotal(data?.total || 0);
+            setCounts({
+                total: data?.counts?.total || 0,
+                USER: data?.counts?.USER || 0,
+                ADMIN: data?.counts?.ADMIN || 0,
+                SCANNER: data?.counts?.SCANNER || 0,
+            });
         } catch (err) {
             console.error('Failed to load users:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    };
+
+    const openUserView = (user, edit = false) => {
+        setSelectedUser(user);
+        setEditForm({
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            email: user.email || '',
+            phone_number: user.phone_number || '',
+            role: user.role || 'USER',
+            assigned_gate: user.assigned_gate || '',
+            is_active: user.is_active !== false,
+        });
+        setIsEditing(edit);
+        setError(null);
+        setViewModalOpen(true);
     };
 
     const formatDate = (date) => {
@@ -111,42 +158,29 @@ export default function AdminUsers() {
         );
     };
 
-    const handleUpdateRole = async (newRole) => {
+    const handleSaveUser = async (e) => {
+        e?.preventDefault();
         if (!selectedUser) return;
-
         try {
             setSaving(true);
-            await api.updateUserRole(selectedUser.id, newRole);
-
-            if (newRole === 'SCANNER' && assignedGate) {
-                await api.updateUserGate(selectedUser.id, assignedGate);
-            }
-            setUsers(users.map(u =>
-                u.id === selectedUser.id ? { ...u, role: newRole, assigned_gate: newRole === 'SCANNER' ? assignedGate : null } : u
-            ));
-            setEditModalOpen(false);
-            setSelectedUser(null);
-            setAssignedGate('');
+            setError(null);
+            const updated = await api.updateAdminUser(selectedUser.id, {
+                first_name: editForm.first_name,
+                last_name: editForm.last_name,
+                email: editForm.email.trim().toLowerCase(),
+                phone_number: editForm.phone_number,
+                role: editForm.role,
+                assigned_gate: editForm.role === 'SCANNER' ? editForm.assigned_gate : '',
+                is_active: editForm.is_active,
+            });
+            setSelectedUser(updated);
+            setUsers(users.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)));
+            setIsEditing(false);
+            flashSuccess('User updated');
+            await loadUsers();
         } catch (err) {
             console.error('Failed to update user:', err);
             setError(err.message);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleGateChange = async () => {
-        if (!selectedUser || !assignedGate) return;
-        try {
-            setSaving(true);
-            await api.updateUserGate(selectedUser.id, assignedGate);
-            setUsers(users.map(u =>
-                u.id === selectedUser.id ? { ...u, assigned_gate: assignedGate } : u
-            ));
-            // Don't close modal, just show success? Or close.
-            // For now, let's just update state.
-        } catch (err) {
-            console.error(err);
         } finally {
             setSaving(false);
         }
@@ -228,15 +262,8 @@ export default function AdminUsers() {
         }
     };
 
-    const filteredUsers = users.filter(user => {
-        const searchLower = searchQuery.toLowerCase();
-        return (
-            user.email?.toLowerCase().includes(searchLower) ||
-            user.first_name?.toLowerCase().includes(searchLower) ||
-            user.last_name?.toLowerCase().includes(searchLower) ||
-            user.phone_number?.includes(searchQuery)
-        );
-    });
+    const rangeFrom = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const rangeTo = Math.min(currentPage * PAGE_SIZE, total);
 
     if (loading && users.length === 0) {
         return (
@@ -287,23 +314,30 @@ export default function AdminUsers() {
             {/* Stats Cards */}
             <div className="user-stats-grid">
                 <div className="user-stat-card">
+                    <Users className="w-8 h-8 text-indigo-500" />
+                    <div>
+                        <span className="stat-number">{counts.total}</span>
+                        <span className="stat-label">Total Users</span>
+                    </div>
+                </div>
+                <div className="user-stat-card">
                     <User className="w-8 h-8 text-blue-500" />
                     <div>
-                        <span className="stat-number">{users.filter(u => u.role === 'USER').length}</span>
+                        <span className="stat-number">{counts.USER}</span>
                         <span className="stat-label">Regular Users</span>
                     </div>
                 </div>
                 <div className="user-stat-card">
                     <ShieldAlert className="w-8 h-8 text-purple-500" />
                     <div>
-                        <span className="stat-number">{users.filter(u => u.role === 'ADMIN').length}</span>
+                        <span className="stat-number">{counts.ADMIN}</span>
                         <span className="stat-label">Admins</span>
                     </div>
                 </div>
                 <div className="user-stat-card">
                     <ShieldCheck className="w-8 h-8 text-green-500" />
                     <div>
-                        <span className="stat-number">{users.filter(u => u.role === 'SCANNER').length}</span>
+                        <span className="stat-number">{counts.SCANNER}</span>
                         <span className="stat-label">Scanners</span>
                     </div>
                 </div>
@@ -353,7 +387,7 @@ export default function AdminUsers() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredUsers.length === 0 ? (
+                        {users.length === 0 ? (
                             <tr>
                                 <td colSpan="7" className="empty-cell">
                                     <div className="empty-state">
@@ -363,8 +397,12 @@ export default function AdminUsers() {
                                 </td>
                             </tr>
                         ) : (
-                            filteredUsers.map((user) => (
-                                <tr key={user.id} className={!user.is_active ? 'inactive-row' : ''}>
+                            users.map((user) => (
+                                <tr
+                                    key={user.id}
+                                    className={!user.is_active ? 'inactive-row' : 'cursor-pointer'}
+                                    onClick={() => openUserView(user)}
+                                >
                                     <td className="user-cell">
                                         <div className="user-avatar">
                                             <span>{(user.first_name?.[0] || user.email[0]).toUpperCase()}</span>
@@ -411,15 +449,18 @@ export default function AdminUsers() {
                                         <Calendar className="w-4 h-4" />
                                         <span>{formatDate(user.created_at)}</span>
                                     </td>
-                                    <td className="actions-cell">
+                                    <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            className="action-btn view"
+                                            onClick={() => openUserView(user)}
+                                            title="View user"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                        </button>
                                         <button
                                             className="action-btn edit"
-                                            onClick={() => {
-                                                setSelectedUser(user);
-                                                setAssignedGate(user.assigned_gate || '');
-                                                setEditModalOpen(true);
-                                            }}
-                                            title="Edit Role"
+                                            onClick={() => openUserView(user, true)}
+                                            title="Edit user"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
@@ -462,7 +503,7 @@ export default function AdminUsers() {
                     Previous
                 </button>
                 <span className="pagination-info">
-                    Page {currentPage} of {totalPages}
+                    {rangeFrom}–{rangeTo} of {total} · Page {currentPage} of {totalPages}
                 </span>
                 <button
                     className="pagination-btn"
@@ -678,96 +719,177 @@ export default function AdminUsers() {
                 </div>
             )}
 
-            {/* Edit Role Modal */}
-            {editModalOpen && selectedUser && (
-                <div className="modal-overlay" onClick={() => setEditModalOpen(false)}>
+            {/* View / Edit User Modal */}
+            {viewModalOpen && selectedUser && (
+                <div className="modal-overlay" onClick={() => setViewModalOpen(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <Shield className="w-8 h-8 text-purple-500" />
-                            <h2>Edit User Role</h2>
+                            <User className="w-8 h-8 text-blue-500" />
+                            <h2>{isEditing ? 'Edit User' : 'User Details'}</h2>
                         </div>
-                        <div className="modal-body">
-                            <div className="user-preview">
-                                <div className="user-avatar large">
-                                    <span>{(selectedUser.first_name?.[0] || selectedUser.email[0]).toUpperCase()}</span>
-                                </div>
-                                <div className="user-details">
-                                    <span className="user-name">
-                                        {selectedUser.first_name} {selectedUser.last_name}
-                                    </span>
-                                    <span className="user-email">{selectedUser.email}</span>
-                                </div>
-                            </div>
-
-                            <div className="role-selector">
-                                <label>Select Role:</label>
-                                <div className="role-options">
-                                    <button
-                                        className={`role-option ${selectedUser.role === 'USER' ? 'selected' : ''}`}
-                                        onClick={() => handleUpdateRole('USER')}
-                                        disabled={saving}
-                                    >
-                                        <User className="w-5 h-5" />
-                                        <span>User</span>
-                                        <p>Regular user with ticket purchasing abilities</p>
-                                    </button>
-                                    <button
-                                        className={`role-option ${selectedUser.role === 'SCANNER' ? 'selected' : ''}`}
-                                        onClick={() => handleUpdateRole('SCANNER')}
-                                        disabled={saving}
-                                    >
-                                        <ShieldCheck className="w-5 h-5" />
-                                        <span>Scanner</span>
-                                        <p>Can scan and validate tickets at events</p>
-                                    </button>
-                                    <button
-                                        className={`role-option ${selectedUser.role === 'ADMIN' ? 'selected' : ''}`}
-                                        onClick={() => handleUpdateRole('ADMIN')}
-                                        disabled={saving}
-                                    >
-                                        <ShieldAlert className="w-5 h-5" />
-                                        <span>Admin</span>
-                                        <p>Full access to all admin features</p>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {(selectedUser.role === 'SCANNER' || (selectedUser.role !== 'SCANNER' && false)) && (
-                                <div className="gate-selector mt-4 pt-4 border-t border-gray-100">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Assign Gate (Scanners Only)
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <select
-                                            className="w-full p-2 border border-gray-300 rounded-lg"
-                                            value={assignedGate}
-                                            onChange={(e) => setAssignedGate(e.target.value)}
-                                            disabled={selectedUser.role !== 'SCANNER'}
-                                        >
-                                            <option value="">-- Select Gate --</option>
-                                            <option value="Main Entrance">Main Entrance</option>
-                                            <option value="VIP Gate">VIP Gate</option>
-                                            <option value="Backstage">Backstage</option>
-                                            <option value="Parking Entry">Parking Entry</option>
-                                        </select>
-                                        {selectedUser.role === 'SCANNER' && (
-                                            <button
-                                                className="btn-primary py-2 px-3"
-                                                onClick={handleGateChange}
-                                                disabled={saving || !assignedGate}
-                                            >
-                                                Save
-                                            </button>
-                                        )}
+                        <form onSubmit={handleSaveUser}>
+                            <div className="modal-body">
+                                <div className="user-preview">
+                                    <div className="user-avatar large">
+                                        <span>{(selectedUser.first_name?.[0] || selectedUser.email[0]).toUpperCase()}</span>
+                                    </div>
+                                    <div className="user-details">
+                                        <span className="user-name">
+                                            {selectedUser.first_name} {selectedUser.last_name}
+                                        </span>
+                                        <span className="user-email">{selectedUser.email}</span>
+                                        {getRoleBadge(selectedUser.role)}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                        <div className="modal-actions">
-                            <button className="btn-secondary" onClick={() => setEditModalOpen(false)}>
-                                Close
-                            </button>
-                        </div>
+
+                                {isEditing ? (
+                                    <>
+                                        <div className="form-group">
+                                            <label>First name</label>
+                                            <input
+                                                type="text"
+                                                value={editForm.first_name}
+                                                onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Last name</label>
+                                            <input
+                                                type="text"
+                                                value={editForm.last_name}
+                                                onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Email *</label>
+                                            <input
+                                                type="email"
+                                                value={editForm.email}
+                                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Phone</label>
+                                            <input
+                                                type="tel"
+                                                value={editForm.phone_number}
+                                                onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Role</label>
+                                            <select
+                                                value={editForm.role}
+                                                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                                            >
+                                                <option value="USER">User</option>
+                                                <option value="SCANNER">Scanner</option>
+                                                <option value="ADMIN">Admin</option>
+                                            </select>
+                                        </div>
+                                        {editForm.role === 'SCANNER' && (
+                                            <div className="form-group">
+                                                <label>Assigned gate</label>
+                                                <select
+                                                    value={editForm.assigned_gate}
+                                                    onChange={(e) => setEditForm({ ...editForm, assigned_gate: e.target.value })}
+                                                >
+                                                    <option value="">-- Select Gate --</option>
+                                                    <option value="Main Entrance">Main Entrance</option>
+                                                    <option value="VIP Gate">VIP Gate</option>
+                                                    <option value="Backstage">Backstage</option>
+                                                    <option value="Parking Entry">Parking Entry</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                        <div className="form-group">
+                                            <label className="checkbox-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={editForm.is_active}
+                                                    onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                                                />
+                                                Active account
+                                            </label>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <dl className="user-detail-list">
+                                        <div>
+                                            <dt>Name</dt>
+                                            <dd>{[selectedUser.first_name, selectedUser.last_name].filter(Boolean).join(' ') || '—'}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>Email</dt>
+                                            <dd>{selectedUser.email}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>Phone</dt>
+                                            <dd>{selectedUser.phone_number || '—'}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>Role</dt>
+                                            <dd>{getRoleBadge(selectedUser.role)}</dd>
+                                        </div>
+                                        {selectedUser.role === 'SCANNER' && (
+                                            <div>
+                                                <dt>Gate</dt>
+                                                <dd>{selectedUser.assigned_gate || 'Unassigned'}</dd>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <dt>Status</dt>
+                                            <dd>
+                                                <span className={`user-status ${selectedUser.is_active ? 'active' : 'inactive'}`}>
+                                                    {selectedUser.is_active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>Joined</dt>
+                                            <dd>{formatDate(selectedUser.created_at)}</dd>
+                                        </div>
+                                    </dl>
+                                )}
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-secondary" onClick={() => setViewModalOpen(false)}>
+                                    Close
+                                </button>
+                                {!isEditing && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            onClick={() => {
+                                                setViewModalOpen(false);
+                                                setNewPassword('');
+                                                setConfirmNewPassword('');
+                                                setPasswordModalOpen(true);
+                                            }}
+                                        >
+                                            <KeyRound className="w-4 h-4" />
+                                            Password
+                                        </button>
+                                        <button type="button" className="btn-primary" onClick={() => setIsEditing(true)}>
+                                            <Edit className="w-4 h-4" />
+                                            Edit
+                                        </button>
+                                    </>
+                                )}
+                                {isEditing && (
+                                    <>
+                                        <button type="button" className="btn-secondary" onClick={() => setIsEditing(false)}>
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="btn-primary" disabled={saving}>
+                                            {saving ? 'Saving...' : 'Save changes'}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

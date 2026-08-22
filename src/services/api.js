@@ -262,6 +262,17 @@ class ApiService {
     });
   }
 
+  async getAdminUser(userId) {
+    return this.request(`/admin/users/${userId}`);
+  }
+
+  async updateAdminUser(userId, userData) {
+    return this.request(`/admin/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(userData),
+    });
+  }
+
   async createAdminUser(userData) {
     return this.request('/admin/users', {
       method: 'POST',
@@ -317,6 +328,10 @@ class ApiService {
   async getEventCheckIns(eventId, limit = 50) {
     // Get recently checked-in tickets for this event
     return this.request(`/tickets/event/${eventId}/check-ins?limit=${limit}`);
+  }
+
+  async getEventTicketHolders(eventId) {
+    return this.request(`/tickets/event/${eventId}/holders`);
   }
 
   // Lottery Methods
