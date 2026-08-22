@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     LayoutDashboard,
@@ -10,13 +10,23 @@ import {
     Ticket,
     Home
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function UserLayout() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [location.pathname]);
+
+    useEffect(() => {
+        document.body.classList.toggle('nav-lock', mobileMenuOpen);
+        return () => document.body.classList.remove('nav-lock');
+    }, [mobileMenuOpen]);
 
     const handleLogout = () => {
         logout();
@@ -42,7 +52,7 @@ export default function UserLayout() {
                 <div className="sidebar-header">
                     <div className="logo">
                         <Ticket className="w-8 h-8" />
-                        {sidebarOpen && <span>Organizer</span>}
+                        <span>Organizer</span>
                     </div>
                     <button
                         className="sidebar-toggle desktop-only"
@@ -69,7 +79,7 @@ export default function UserLayout() {
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     <item.icon className="nav-icon w-5 h-5" />
-                                    {sidebarOpen && <span className="nav-label">{item.label}</span>}
+                                    <span className="nav-label">{item.label}</span>
                                 </NavLink>
                             </li>
                         ))}
@@ -83,24 +93,22 @@ export default function UserLayout() {
                         onClick={() => setMobileMenuOpen(false)}
                     >
                         <Home className="nav-icon w-5 h-5" />
-                        {sidebarOpen && <span className="nav-label">Back to Site</span>}
+                        <span className="nav-label">Back to Site</span>
                     </NavLink>
 
                     <div className="user-info">
                         <div className="user-avatar">
                             <span>{(user?.first_name?.[0] || user?.email?.[0] || 'A').toUpperCase()}</span>
                         </div>
-                        {sidebarOpen && (
-                            <div className="user-details">
-                                <span className="user-name">{user?.first_name} {user?.last_name}</span>
-                                <span className="user-role">Organizer</span>
-                            </div>
-                        )}
+                        <div className="user-details">
+                            <span className="user-name">{user?.first_name} {user?.last_name}</span>
+                            <span className="user-role">Organizer</span>
+                        </div>
                     </div>
 
                     <button className="logout-btn" onClick={handleLogout}>
                         <LogOut className="w-5 h-5" />
-                        {sidebarOpen && <span>Logout</span>}
+                        <span>Logout</span>
                     </button>
                 </div>
             </aside>

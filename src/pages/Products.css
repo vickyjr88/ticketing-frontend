@@ -249,3 +249,18 @@
     background: white;
     border-radius: 12px;
 }
+
+@media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-box {
+        min-width: 0;
+        width: 100%;
+    }
+}

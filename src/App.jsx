@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, Outlet } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
-import { Ticket, LogOut, User } from 'lucide-react';
+import { Ticket, LogOut, User, Menu, X } from 'lucide-react';
 import Partners from './components/layout/Partners';
 
 // Pages
@@ -86,76 +87,76 @@ function AdminRoute({ children }) {
 function Layout({ children }) {
   const { isAuthenticated, user, logout } = useAuth();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'SCANNER';
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    document.body.classList.toggle('nav-lock', menuOpen);
+    return () => document.body.classList.remove('nav-lock');
+  }, [menuOpen]);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link to="/events" className="flex items-center gap-2 text-2xl font-bold text-blue-600">
-              <Ticket className="w-8 h-8" />
-              Home Run with Pipita
-            </Link>
+      {menuOpen && (
+        <div className="site-nav-backdrop" onClick={() => setMenuOpen(false)} />
+      )}
+      <nav className="site-nav">
+        <div className="site-nav-bar">
+          <Link to="/events" className="site-logo">
+            <Ticket className="w-7 h-7 shrink-0" />
+            <span className="site-logo-full">Home Run with Pipita</span>
+            <span className="site-logo-short">Pipita</span>
+          </Link>
 
-            <div className="flex items-center gap-4">
-              <Link to="/events" className="text-gray-700 hover:text-blue-600 font-medium">
-                Events
+          <button
+            type="button"
+            className="site-nav-toggle lg:hidden"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          <div className={`site-nav-menu ${menuOpen ? 'is-open' : ''}`}>
+            <Link to="/events" className="site-nav-link">Events</Link>
+            <Link to="/products" className="site-nav-link">Shop</Link>
+
+            {(isAdmin || user?.role === 'USER') && (
+              <Link
+                to={isAdmin ? '/admin' : '/dashboard/events'}
+                className="site-nav-link site-nav-link-accent"
+              >
+                {isAdmin ? 'Admin Dashboard' : 'Manage Events'}
               </Link>
-              <Link to="/products" className="text-gray-700 hover:text-blue-600 font-medium">
-                Shop
-              </Link>
+            )}
 
-              {(isAdmin || user?.role === 'USER') && (
-                <Link to={isAdmin ? "/admin" : "/dashboard/events"} className="text-blue-600 hover:text-blue-800 font-medium">
-                  {isAdmin ? 'Admin Dashboard' : 'Manage Events'}
-                </Link>
-              )}
-
-              {isAuthenticated ? (
-                <>
-                  <Link to="/my-tickets" className="text-gray-700 hover:text-blue-600 font-medium">
-                    My Tickets
+            {isAuthenticated ? (
+              <>
+                <Link to="/my-tickets" className="site-nav-link">My Tickets</Link>
+                <Link to="/my-orders" className="site-nav-link">My Orders</Link>
+                <Link to="/layaway" className="site-nav-link site-nav-link-green">Lipa Pole Pole</Link>
+                <div className="site-nav-user">
+                  <Link to="/profile" className="site-nav-profile">
+                    <User className="w-4 h-4" />
+                    <span>{user?.first_name || user?.email}</span>
                   </Link>
-                  <Link to="/my-orders" className="text-gray-700 hover:text-blue-600 font-medium">
-                    My Orders
-                  </Link>
-                  <Link to="/layaway" className="text-green-600 hover:text-green-700 font-medium">
-                    Lipa Pole Pole
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <Link to="/profile" className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                      <User className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">
-                        {user?.first_name || user?.email}
-                      </span>
-                    </Link>
-                    <button
-                      onClick={logout}
-                      className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-red-600 font-medium"
-                      title="Logout"
-                    >
-                      <LogOut className="w-4 h-4" />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="text-gray-700 hover:text-blue-600 font-medium"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
+                  <button type="button" onClick={logout} className="site-nav-logout" title="Logout">
+                    <LogOut className="w-4 h-4" />
+                    <span className="site-nav-logout-label">Logout</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="site-nav-auth">
+                <Link to="/login" className="site-nav-link">Login</Link>
+                <Link to="/register" className="site-nav-cta">Sign Up</Link>
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -167,7 +168,7 @@ function Layout({ children }) {
       <footer className="bg-gray-900 text-gray-400 border-t mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-            <div className="flex gap-6">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
               <Link to="/events" className="text-gray-400 hover:text-white transition-colors">Events</Link>
               <Link to="/products" className="text-gray-400 hover:text-white transition-colors">Shop</Link>
               <Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link>

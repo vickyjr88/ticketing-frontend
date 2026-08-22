@@ -337,10 +337,10 @@ export default function EventDetails() {
           <img
             src={event.banner_image_url}
             alt={event.title}
-            className="w-full h-64 object-cover rounded-lg mb-6"
+            className="w-full h-48 sm:h-64 object-cover rounded-lg mb-6"
           />
         )}
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">{event.title}</h1>
+        <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-4 break-words">{event.title}</h1>
         <p className="text-gray-600 text-lg mb-6">{event.description}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">

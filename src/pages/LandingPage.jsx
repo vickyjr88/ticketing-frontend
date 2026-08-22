@@ -68,7 +68,7 @@ export default function LandingPage() {
                         <span className="text-sm font-medium uppercase tracking-widest text-white/90">Featured Event</span>
                     </div>
 
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tighter text-white drop-shadow-2xl leading-tight">
+                    <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tighter text-white drop-shadow-2xl leading-tight break-words">
                         {event.title}
                     </h1>
 
