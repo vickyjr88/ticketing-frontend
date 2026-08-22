@@ -9,14 +9,16 @@ import {
     Mail,
     Phone,
     Calendar,
-    MoreVertical,
     Edit,
     Ban,
     CheckCircle,
     AlertCircle,
     ChevronLeft,
     ChevronRight,
-    MapPin
+    MapPin,
+    Plus,
+    KeyRound,
+    RefreshCw
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -30,8 +32,34 @@ export default function AdminUsers() {
     const [totalPages, setTotalPages] = useState(1);
     const [selectedUser, setSelectedUser] = useState(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [passwordModalOpen, setPasswordModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [assignedGate, setAssignedGate] = useState('');
+    const [success, setSuccess] = useState(null);
+    const emptyCreateForm = {
+        email: '',
+        password: '',
+        confirmPassword: '',
+        first_name: '',
+        last_name: '',
+        phone_number: '',
+        role: 'SCANNER',
+        assigned_gate: '',
+    };
+    const [createForm, setCreateForm] = useState(emptyCreateForm);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+    const generatePassword = () => {
+        const chars = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    };
+
+    const flashSuccess = (message) => {
+        setSuccess(message);
+        setTimeout(() => setSuccess(null), 4000);
+    };
 
     useEffect(() => {
         loadUsers();
@@ -124,6 +152,70 @@ export default function AdminUsers() {
         }
     };
 
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        if (createForm.password !== createForm.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+        if (createForm.password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setError(null);
+            await api.createAdminUser({
+                email: createForm.email.trim(),
+                password: createForm.password,
+                first_name: createForm.first_name.trim() || undefined,
+                last_name: createForm.last_name.trim() || undefined,
+                phone_number: createForm.phone_number.trim() || undefined,
+                role: createForm.role,
+                assigned_gate: createForm.role === 'SCANNER' ? createForm.assigned_gate || undefined : undefined,
+            });
+            setCreateModalOpen(false);
+            setCreateForm(emptyCreateForm);
+            flashSuccess(`Created ${createForm.role.toLowerCase()} ${createForm.email}`);
+            await loadUsers();
+        } catch (err) {
+            console.error('Failed to create user:', err);
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSetPassword = async (e) => {
+        e.preventDefault();
+        if (!selectedUser) return;
+        if (newPassword !== confirmNewPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+        if (newPassword.length < 6) {
+            setError('Password must be at least 6 characters');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setError(null);
+            await api.setUserPassword(selectedUser.id, newPassword);
+            setPasswordModalOpen(false);
+            setSelectedUser(null);
+            setNewPassword('');
+            setConfirmNewPassword('');
+            flashSuccess(`Password updated for ${selectedUser.email}`);
+        } catch (err) {
+            console.error('Failed to set password:', err);
+            setError(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleToggleActive = async (userId, currentStatus) => {
         try {
             await api.updateUserStatus(userId, !currentStatus);
@@ -165,7 +257,25 @@ export default function AdminUsers() {
                         <p>Manage user accounts and roles</p>
                     </div>
                 </div>
+                <button
+                    className="btn-primary"
+                    onClick={() => {
+                        setCreateForm(emptyCreateForm);
+                        setError(null);
+                        setCreateModalOpen(true);
+                    }}
+                >
+                    <Plus className="w-4 h-4" />
+                    Add User
+                </button>
             </div>
+
+            {success && (
+                <div className="admin-success">
+                    <CheckCircle className="w-5 h-5" />
+                    <span>{success}</span>
+                </div>
+            )}
 
             {error && (
                 <div className="admin-error">
@@ -314,6 +424,19 @@ export default function AdminUsers() {
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
+                                            className="action-btn edit"
+                                            onClick={() => {
+                                                setSelectedUser(user);
+                                                setNewPassword('');
+                                                setConfirmNewPassword('');
+                                                setError(null);
+                                                setPasswordModalOpen(true);
+                                            }}
+                                            title="Set password"
+                                        >
+                                            <KeyRound className="w-4 h-4" />
+                                        </button>
+                                        <button
                                             className={`action-btn ${user.is_active ? 'disable' : 'enable'}`}
                                             onClick={() => handleToggleActive(user.id, user.is_active)}
                                             title={user.is_active ? 'Deactivate' : 'Activate'}
@@ -350,6 +473,210 @@ export default function AdminUsers() {
                     <ChevronRight className="w-4 h-4" />
                 </button>
             </div>
+
+            {/* Create User Modal */}
+            {createModalOpen && (
+                <div className="modal-overlay" onClick={() => setCreateModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <User className="w-8 h-8 text-blue-500" />
+                            <h2>Add User</h2>
+                        </div>
+                        <form onSubmit={handleCreateUser}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>First name</label>
+                                    <input
+                                        type="text"
+                                        value={createForm.first_name}
+                                        onChange={(e) => setCreateForm({ ...createForm, first_name: e.target.value })}
+                                        placeholder="Jane"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Last name</label>
+                                    <input
+                                        type="text"
+                                        value={createForm.last_name}
+                                        onChange={(e) => setCreateForm({ ...createForm, last_name: e.target.value })}
+                                        placeholder="Doe"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Email *</label>
+                                    <input
+                                        type="email"
+                                        value={createForm.email}
+                                        onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                                        placeholder="scanner@example.com"
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Phone</label>
+                                    <input
+                                        type="tel"
+                                        value={createForm.phone_number}
+                                        onChange={(e) => setCreateForm({ ...createForm, phone_number: e.target.value })}
+                                        placeholder="+2547..."
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Role *</label>
+                                    <select
+                                        value={createForm.role}
+                                        onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
+                                        required
+                                    >
+                                        <option value="SCANNER">Scanner</option>
+                                        <option value="USER">User</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
+                                </div>
+                                {createForm.role === 'SCANNER' && (
+                                    <div className="form-group">
+                                        <label>Assigned gate</label>
+                                        <select
+                                            value={createForm.assigned_gate}
+                                            onChange={(e) => setCreateForm({ ...createForm, assigned_gate: e.target.value })}
+                                        >
+                                            <option value="">-- Select Gate --</option>
+                                            <option value="Main Entrance">Main Entrance</option>
+                                            <option value="VIP Gate">VIP Gate</option>
+                                            <option value="Backstage">Backstage</option>
+                                            <option value="Parking Entry">Parking Entry</option>
+                                        </select>
+                                    </div>
+                                )}
+                                <div className="form-group">
+                                    <label>Password *</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={createForm.password}
+                                            onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                                            placeholder="Min 6 characters"
+                                            required
+                                            minLength={6}
+                                            autoComplete="new-password"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            title="Generate password"
+                                            onClick={() => {
+                                                const password = generatePassword();
+                                                setCreateForm({ ...createForm, password, confirmPassword: password });
+                                            }}
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Confirm password *</label>
+                                    <input
+                                        type="text"
+                                        value={createForm.confirmPassword}
+                                        onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                                        placeholder="Repeat password"
+                                        required
+                                        minLength={6}
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+                                <p className="text-sm text-gray-500 mt-2">
+                                    Share this password with the user. It is not emailed.
+                                </p>
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-secondary" onClick={() => setCreateModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-primary" disabled={saving}>
+                                    {saving ? 'Creating...' : 'Create User'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Set Password Modal */}
+            {passwordModalOpen && selectedUser && (
+                <div className="modal-overlay" onClick={() => setPasswordModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <KeyRound className="w-8 h-8 text-amber-500" />
+                            <h2>Set Password</h2>
+                        </div>
+                        <form onSubmit={handleSetPassword}>
+                            <div className="modal-body">
+                                <div className="user-preview">
+                                    <div className="user-avatar large">
+                                        <span>{(selectedUser.first_name?.[0] || selectedUser.email[0]).toUpperCase()}</span>
+                                    </div>
+                                    <div className="user-details">
+                                        <span className="user-name">
+                                            {selectedUser.first_name} {selectedUser.last_name}
+                                        </span>
+                                        <span className="user-email">{selectedUser.email}</span>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>New password *</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="Min 6 characters"
+                                            required
+                                            minLength={6}
+                                            autoComplete="new-password"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn-secondary"
+                                            title="Generate password"
+                                            onClick={() => {
+                                                const password = generatePassword();
+                                                setNewPassword(password);
+                                                setConfirmNewPassword(password);
+                                            }}
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Confirm password *</label>
+                                    <input
+                                        type="text"
+                                        value={confirmNewPassword}
+                                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                        placeholder="Repeat password"
+                                        required
+                                        minLength={6}
+                                        autoComplete="new-password"
+                                    />
+                                </div>
+                                <p className="text-sm text-gray-500 mt-2">
+                                    Share the new password with the user. It is not emailed.
+                                </p>
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-secondary" onClick={() => setPasswordModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-primary" disabled={saving}>
+                                    {saving ? 'Saving...' : 'Update Password'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Edit Role Modal */}
             {editModalOpen && selectedUser && (

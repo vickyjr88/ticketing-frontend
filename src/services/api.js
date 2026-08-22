@@ -33,7 +33,10 @@ class ApiService {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
+        const message = Array.isArray(data.message)
+          ? data.message.join(', ')
+          : data.message;
+        throw new Error(message || 'Request failed');
       }
 
       return data;
@@ -256,6 +259,20 @@ class ApiService {
     return this.request(`/admin/users/${userId}/gate`, {
       method: 'PATCH',
       body: JSON.stringify({ gate }),
+    });
+  }
+
+  async createAdminUser(userData) {
+    return this.request('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async setUserPassword(userId, password) {
+    return this.request(`/admin/users/${userId}/password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ password }),
     });
   }
 
