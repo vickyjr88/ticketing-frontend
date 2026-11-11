@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
     Mail,
     Phone,
@@ -13,6 +13,7 @@ import {
     ChevronDown
 } from 'lucide-react';
 import api from '../services/api';
+import { DELETION_PREFIX } from './DeleteAccount';
 
 const SUBJECTS = [
     { value: 'GENERAL', label: 'General Inquiry' },
@@ -25,12 +26,18 @@ const SUBJECTS = [
 ];
 
 function ContactUs() {
+    // /contact?topic=delete-account pre-fills an account deletion request.
+    // Admins see these in Admin > Contacts with the "ACCOUNT DELETION REQUEST" prefix.
+    const [searchParams] = useSearchParams();
+    const isDeletionRequest = searchParams.get('topic') === 'delete-account';
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         phone: '',
-        subject: 'GENERAL',
-        message: ''
+        subject: isDeletionRequest ? 'SUPPORT' : 'GENERAL',
+        message: isDeletionRequest
+            ? `${DELETION_PREFIX}: Please permanently delete the account and personal data registered to this email address.`
+            : ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);

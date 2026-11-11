@@ -22,6 +22,9 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import ContactUs from './pages/ContactUs';
 import AboutUs from './pages/AboutUs';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Terms from './pages/Terms';
+import DeleteAccount from './pages/DeleteAccount';
 import LayawayOrders from './pages/LayawayOrders';
 
 // Admin Pages
@@ -173,6 +176,9 @@ function Layout({ children }) {
               <Link to="/products" className="text-gray-400 hover:text-white transition-colors">Shop</Link>
               <Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link>
               <Link to="/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link>
+              <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link>
+              <Link to="/terms" className="text-gray-400 hover:text-white transition-colors">Terms</Link>
+              <Link to="/delete-account" className="text-gray-400 hover:text-white transition-colors">Delete Account</Link>
             </div>
           </div>
 
@@ -180,7 +186,7 @@ function Layout({ children }) {
           <Partners />
 
           <div className="text-center text-gray-400 border-t border-gray-800 pt-8">
-            <p className="mb-2">&copy; 2024 Home Run with Pipita. All rights reserved.</p>
+            <p className="mb-2">&copy; {new Date().getFullYear()} Home Run with Pipita. All rights reserved.</p>
             <p className="text-sm">
               Powered by <a href="https://vitaldigitalmedia.net/" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-500 hover:text-blue-400 transition-colors">Vital Digital Media</a>
             </p>
@@ -254,6 +260,10 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/contact" element={<ContactUs />} />
               <Route path="/about" element={<AboutUs />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/privacy-policy" element={<Navigate to="/privacy" replace />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/delete-account" element={<DeleteAccount />} />
 
               {/* Protected Routes */}
               <Route

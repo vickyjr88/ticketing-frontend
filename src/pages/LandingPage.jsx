@@ -106,6 +106,10 @@ export default function LandingPage() {
                 {/* Footer  */}
                 <div className="absolute bottom-4 w-full text-center z-20 text-gray-400 text-sm">
                     Powered by <a href="https://vitaldigitalmedia.net/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-medium">Vital Digital Media</a>
+                    <span className="mx-2">·</span>
+                    <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+                    <span className="mx-2">·</span>
+                    <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
                 </div>
             </div>
         </div>
